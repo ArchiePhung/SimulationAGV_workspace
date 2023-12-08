@@ -1,0 +1,46 @@
+<launch>
+  <arg name="map_global" default="/home/hoang/map_shiv34/map2d.yaml"/>
+  <!-- <arg name="map_global" default="/home/hoang/map2d.yaml"/> -->
+  <arg name="map_local" default="/home/hoang/map_shiv34/map2d_29_3.yaml"/>
+  <!-- <arg name="map_local" default="/home/hoang/map/map1.yaml"/> -->
+
+  <arg name="x_origin" default="1.139987"/>
+  <arg name="y_origin" default="1.220442"/>
+  <arg name="az_origin" default="0.001503"/>
+  <arg name="aw_origin" default="0.999999"/>
+  <arg name="x_point1" default="-17.0400867462"/>
+  <arg name="y_point1" default="29.7322883606"/>
+  <arg name="x_point2" default="17.2046661377"/>
+  <arg name="y_point2" default="69.2883987427"/>
+
+  <!-- <arg name="map_local" default="/home/hoang/map2d.yaml"/> -->
+  <!-- <arg name="rviz" default="false"/> -->
+  <!-- <node pkg="tf2_ros" type="static_transform_publisher" name="local_map_to_global_map" args="10 0 0 0 0 0 1 map local_map" /> -->
+
+  <!-- <node pkg="tf" type="static_transform_publisher" name="local_map_to_global_map" args="10 10 0 0 0 0 1 map local_map 100"  /> -->
+
+  <node pkg="map_server" type="map_server" name="global_map" args="$(arg map_global)" output="screen">
+    <param name="frame_id" value="map"/>
+    <remap from="map" to="/global_map"/>
+    <remap from="map_metadata" to="/global_map/map_metadata"/>
+  </node>
+
+  <node pkg="map_server" type="map_server" name="local_map" args="$(arg map_local)" output="screen">
+    <param name="frame_id" value="local_map"/>
+    <remap from="map" to="/local_map"/>
+    <remap from="map_metadata" to="/local_map/map_metadata"/>
+  </node>
+
+  <node pkg="sti_module" name="merger_map" type="merger_map.py" output="screen"> 
+    <param name="x_tf" value="$(arg x_origin)"/>
+    <param name="y_tf" value="$(arg y_origin)"/>
+    <param name="az_tf" value="$(arg az_origin)"/>
+    <param name="aw_tf" value="$(arg aw_origin)"/>
+    <param name="X1_local" value="$(arg x_point1)"/>
+    <param name="Y1_local" value="$(arg y_point1)"/>
+    <param name="X2_local" value="$(arg x_point2)"/>
+    <param name="Y2_local" value="$(arg y_point2)"/>
+  </node>
+
+  <!-- <node if="$(arg rviz)" pkg="rviz" type="rviz" name="rviz" args="-d $(find multirobot_map_merge)/launch/map_merge.rviz"/> -->
+</launch>

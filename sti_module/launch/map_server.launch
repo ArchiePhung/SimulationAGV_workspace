@@ -1,0 +1,5 @@
+<launch>
+  <arg name="map_file" default="/home/hoang/map_shiv34/map2d_29_3.yaml"/>
+<!-- Map server -->
+  <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)"/>
+</launch>

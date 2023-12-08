@@ -1,0 +1,5 @@
+<launch>
+          <!-- <node pkg="sti_modbus" name="rtu_master" type="rtu_master.py" output="screen" /> -->
+          <node pkg="sti_module" name="test_goal_control" type="test_goal_control.py" output="screen"/>
+
+</launch>

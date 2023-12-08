@@ -1,0 +1,11 @@
+<launch>
+	<include file="$(find sti_module)/launch/goalControl.launch" /> 
+	
+	<!-- <include file="$(find sti_module)/launch/modbusControl.launch" /> ` -->
+
+	<include file="$(find sti_module)/launch/parkingControl.launch" />
+
+	<include file="$(find sti_module)/launch/poseRobotTag.launch" />
+	
+	<include file="$(find sti_module)/launch/safety_zone.launch" />
+</launch>

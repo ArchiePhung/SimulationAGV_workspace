@@ -1,0 +1,16 @@
+<launch>
+
+      <!-- luu pose cua Tag trong map -> data_tag.txt  -->
+      <arg name="node_namespace" default="getPoseAruco_v3" />
+      <rosparam command="load" 
+                file="$(find sti_module)/config/param_getPoseRobot.yaml" 
+                ns="$(arg node_namespace)"   />
+      <node pkg="sti_module" 
+            name="$(arg node_namespace)" 
+            type="$(arg node_namespace)" 
+            output="screen"/>
+      <node pkg="sti_module" 
+            name="key_pub" 
+            type="key_pub" 
+            output="screen"/> 
+</launch>

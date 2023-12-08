@@ -1,0 +1,8 @@
+<launch>
+
+    <!-- Xoa loi mc 10 time -->
+    <node pkg="sti_module" name="clearERR_mc" type="clearERR_mc.py"/>
+
+</launch>
+
+

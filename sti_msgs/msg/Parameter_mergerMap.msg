@@ -1,0 +1,10 @@
+string pathMapLocal
+string pathMapGlobal
+float64 X_origin
+float64 Y_origin
+float64 OZ_origin
+float64 OW_origin
+float64 X_point1
+float64 Y_point1
+float64 X_point2
+float64 Y_point2

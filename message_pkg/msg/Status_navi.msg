@@ -1,0 +1,5 @@
+int16 misson
+int16 status_now
+int16 error
+int16 safety
+int16 complete_misson

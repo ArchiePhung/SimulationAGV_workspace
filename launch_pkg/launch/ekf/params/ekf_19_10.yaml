@@ -1,0 +1,72 @@
+frequency: 25
+
+two_d_mode: true  # loai bo bien so 3D 
+diagnostics_agg: true
+# publish_tf: true
+#x     , y     , z,
+#roll  , pitch , yaw,
+#vx    , vy    , vz,
+#vroll , vpitch, vyaw,
+#ax    , ay    , az
+
+
+# encoder : 24hz
+# odom0: /raw_odom
+# odom0_config: [false, false, false,
+#                false, false, false,
+#                true,  true,  false,
+#                false, false, true,
+#                false, false, false]
+
+# odom0_differential: true
+# odom0_relative: true
+
+twist0: raw_vel
+twist0_config: [false, false, false,
+                false, false, false,
+                true,  true,  true,
+                false, false, true,
+                false, false, false]
+twist0_queue_size: 3
+twist0_rejection_threshold: 2
+twist0_nodelay: false
+
+# nav350 : 6 hz
+# odom1: /nav350laser/odom
+# odom1_config: [true, true, false,
+#                false, false, true,
+#                false, false, false,
+#                false, false, false,
+#                false, false, false]
+
+# odom1_differential: true
+# odom1_relative: false
+
+
+# -- pose from nav350
+# pose0: /pose_lidar
+# pose0_config: [true, true, false,
+#                false, false, true,
+#                false, false, false,
+#                false, false, false,
+#                false, false, false]
+
+# pose0_differential: true #false
+# pose0_relative: true
+
+# -- imu
+imu0: /imu_filter
+imu0_config: [false, false, false,
+              false, false, true,
+              false, false, false,
+              false, false, true,
+              false, false, false]
+
+imu0_differential: true
+imu0_relative: true
+
+map_frame: frame_map
+odom_frame: frame_odom
+base_link_frame: frame_robot1
+world_frame: frame_odom
+

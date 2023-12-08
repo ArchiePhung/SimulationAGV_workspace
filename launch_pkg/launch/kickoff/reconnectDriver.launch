@@ -1,0 +1,4 @@
+<launch>
+	<rosparam command="load"  file="$(find launch_pkg)/config/param.yaml" />
+	<node pkg="launch_pkg" name="reconnectDriver" type="reconnectDriver.py" output="screen"> </node>
+</launch>

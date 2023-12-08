@@ -1,0 +1,5 @@
+<launch>
+	<node pkg="sti_control" name="stiControl" type="stiControl.py" output="screen"> </node>
+	<!-- <node pkg="sti_module" name="quangDuong" type="quang_duong.py"> </node>
+	<node pkg="sti_control" name="stiDebug" type="stiDebug.py"> </node> -->
+</launch>

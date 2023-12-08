@@ -1,0 +1,16 @@
+std_msgs/Header header
+int32 version_positioning
+string error_code
+int32 wait
+int32 mask
+int32 poseDataEnb
+float64 x
+float64 y
+float64 phi
+int32 optPoseData
+int32 output_mode
+int32 time_stamp
+int32 mean_dev
+int32 nav_mode
+int32 info_state
+int32 number_reflectors

@@ -1,0 +1,9 @@
+int16 pathID
+int16 typePath
+geometry_msgs/Pose pointOne
+geometry_msgs/Pose pointSecond
+float64 velocity
+float64 radius
+geometry_msgs/Pose pointCenter
+int64 numberPts
+geometry_msgs/Pose pointMid

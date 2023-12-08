@@ -1,0 +1,17 @@
+bool lms100
+bool tim551
+bool nav350
+bool camera
+bool main
+bool mc
+bool sc
+bool oc
+bool hc
+bool magLine
+bool loadcell
+bool hmi
+bool imu
+bool driverall
+bool new1
+bool new2
+bool rtc

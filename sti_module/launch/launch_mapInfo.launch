@@ -1,0 +1,6 @@
+<launch>
+    <arg name="node_namespace" default="launch_mapinfo" />
+    <node pkg="sti_module" 
+        name="$(arg node_namespace)" 
+        type="$(arg node_namespace).py"/>
+</launch>

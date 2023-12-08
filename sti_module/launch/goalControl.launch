@@ -1,0 +1,4 @@
+<launch>
+      <node pkg="sti_module"  name="makePathByPointVS2" type="makePathByPointVS2.py" output="screen" > </node>
+	<node pkg="sti_module"  name="goalControlFGV_V2" type="goalControlFGVDemo.py" output="screen" > </node>
+</launch>

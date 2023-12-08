@@ -1,0 +1,15 @@
+<launch>
+      <!-- vung lidar  -->
+      <arg name="node_namespace" default="safety_zone_v5" />
+      <rosparam command="load" 
+                file="$(find sti_module)/config/param_zoneLidar.yaml" 
+                ns="$(arg node_namespace)"   />
+      <node pkg="sti_module" 
+            name="$(arg node_namespace)" 
+            type="$(arg node_namespace).py" 
+            output="screen"/>
+
+      <!-- vung 3d d435 - 8% CPU -->
+      <!-- <include file="$(find safe_pcl)/launch/zone3d.launch" /> -->
+            
+</launch>

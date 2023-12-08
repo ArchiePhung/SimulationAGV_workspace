@@ -1,0 +1,3 @@
+<launch>
+	<node pkg="app_ros" type="app_ros.py" name="app_node" output="screen"> </node>
+</launch>

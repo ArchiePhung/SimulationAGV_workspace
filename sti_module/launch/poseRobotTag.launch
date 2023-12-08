@@ -1,0 +1,11 @@
+<launch>
+      <!-- set pose robot theo tag  -->
+      <arg name="node_namespace" default="getPoseRobot_v7" />
+      <rosparam command="load" 
+                file="$(find sti_module)/config/param_getPoseRobot.yaml" 
+                ns="$(arg node_namespace)"   />
+      <node pkg="sti_module" 
+            name="$(arg node_namespace)" 
+            type="$(arg node_namespace)" />
+            <!-- output="screen"/> -->
+</launch>

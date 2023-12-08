@@ -1,0 +1,4 @@
+<launch>
+      <node pkg="sti_module"  name="makePathParkingVs4" type="makePathParkingVs4.py" output="screen" > </node>
+	<node pkg="sti_module"  name="parkingControlFGV_VS2" type="parkingControlFGV_VS2.py" output="screen" > </node>
+</launch>

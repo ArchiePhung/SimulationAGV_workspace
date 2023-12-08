@@ -1,0 +1,11 @@
+bool LMS100 
+bool TIM551
+bool D435
+bool POWER
+bool MC
+bool SC
+bool OC
+bool HC
+bool RFID
+bool MAGLINE
+bool HMI

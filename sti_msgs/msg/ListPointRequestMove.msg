@@ -1,0 +1,1 @@
+sti_msgs/PointRequestMove[] infoPoint

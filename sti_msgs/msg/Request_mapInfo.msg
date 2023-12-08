@@ -1,0 +1,2 @@
+int8 requestStatus
+string mapName

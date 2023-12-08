@@ -1,0 +1,42 @@
+<launch>
+  <rosparam command="load" file="$(find launch_pkg)/config/param.yaml" />
+
+  <!-- Config AGV in Rviz -->
+  <node pkg="tf" type="static_transform_publisher" name="agv1_to_agv1Safety" args="0 0 0 0 0 0 agv1 agv1_safety 30" />
+
+  <arg name="agv1" default="$(find agv_simulation)/urdf/agv1.urdf"/>
+
+  <param name="agv1_description" command="$(find xacro)/xacro $(arg agv1)" />
+
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" >
+    <remap from="robot_description" to="agv1_description" />
+  </node>
+
+  <!-- App GUI -->
+  <include file="$(find app_ros)/launch/app_ros.launch"/>
+
+  <!-- robot launch -->
+  <!-- Nhận lộ trình và lỗi từ stiControl_fake -->
+  <node name="stiClient_fake" pkg="sti_control" type="stiClient_fake.py" /> 
+
+  <node name="stiDevice_fake" pkg="agv_simulation" type="stiDevice_fake.py" >
+    <rosparam command="load" file="$(find agv_simulation)/config/param_lagv.yaml" />
+  </node>
+
+  <!-- Điều phối chung -->
+  <include file="$(find sti_control)/launch/stiControl.launch"/>
+
+  <!-- Điều hướng AGV  -->
+  <node name="goal_control" pkg="sti_module" type="goal_control_lagvSM.py" output="screen">
+    <rosparam command="load" file="$(find sti_module)/config/param_lagv.yaml" />
+  </node>
+  
+  <!-- Vị trí của AGV trên Rviz -->
+  <node name="agv_sim" pkg="agv_simulation" type="agv_sim.py" respawn="false" >
+    <rosparam command="load" file="$(find agv_simulation)/config/param_lagv.yaml" />
+  </node>
+
+  <!-- Hiển thị qua rviz -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find agv_simulation)/config/rvizconfig.rviz" />  
+
+</launch> 

@@ -1,0 +1,14 @@
+checkke: true
+distance_max: 2
+distance_min: 0.02
+dolech_x_CamVsRObot: 0.033
+kalman_p: 1.0
+kalman_q: 0.1
+kalman_r: 0.1
+kc_checkke: 0.5
+kc_tag_robot_setup: 1.5
+map_file: /home/hoang/map/map1.yaml
+map_frame: /lalalala
+tolerance_max: 0.05
+tolerance_min: 0.02
+x_robot: 1.045

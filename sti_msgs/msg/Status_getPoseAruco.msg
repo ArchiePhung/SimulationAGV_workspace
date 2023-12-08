@@ -1,0 +1,2 @@
+int16 status_addPose
+int16 status_confirnm

@@ -1,0 +1,4 @@
+<launch>
+<rosparam command="load"  file="$(find launch_pkg)/config/param.yaml" />
+	<node pkg="launch_pkg" name="check_physical" type="checkPhysical.py" output="screen"> </node>
+</launch>    

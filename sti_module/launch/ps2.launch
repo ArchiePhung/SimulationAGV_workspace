@@ -1,0 +1,10 @@
+<launch>
+
+      <arg name="node_namespace" default="ps2" />
+      <node pkg="sti_module" 
+            name="$(arg node_namespace)" 
+            type="$(arg node_namespace).py" 
+            output="screen"/>
+
+            
+</launch>

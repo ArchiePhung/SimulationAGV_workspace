@@ -1,0 +1,8 @@
+#!/bin/bash
+[Desktop Entry]
+Type=Application
+Terminal=false
+Exec=run_app.sh
+Name=sti
+Icon=logoSti.png
+Type=Applicationy

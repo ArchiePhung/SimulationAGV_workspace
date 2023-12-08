@@ -1,0 +1,5 @@
+<launch>
+
+    <node pkg="sti_module" type="test_node.py" name="test_node" />
+
+</launch>

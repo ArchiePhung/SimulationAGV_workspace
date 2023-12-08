@@ -1,0 +1,3 @@
+<launch>
+  <node pkg="sti_module"  name="fakeProcessDemo" type="fakeProcessDemoBK.py" output="screen" > </node>
+</launch>

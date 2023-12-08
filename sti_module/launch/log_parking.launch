@@ -1,0 +1,10 @@
+
+<launch>
+
+	<!-- log parking-->
+	<node pkg="sti_module" 
+		name="ghi_LOG" 
+		type="ghi_LOG" 
+		output="screen"/>
+
+</launch>

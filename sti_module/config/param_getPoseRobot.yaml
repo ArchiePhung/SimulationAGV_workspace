@@ -1,0 +1,9 @@
+cam_name: /d435_color_optical_frame
+f_cam_name: /f_camera_aruco
+f_robot_frame: /f_robot
+f_tag_fistName: /f_tag_
+link_file: /home/amr1-l300/catkin_ws/src/sti_module/data/data_tag.json
+map_frame: /lalalala
+robot_frame: base_footprint
+sl_filter: 40
+tag_fistName: /tag_

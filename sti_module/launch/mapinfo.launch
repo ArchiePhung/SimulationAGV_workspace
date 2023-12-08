@@ -1,0 +1,9 @@
+<launch>
+  <arg name="path_map" default="/home/hoang/map/map2d_29_3.yaml"/>
+  <node pkg="map_server" type="map_server" name="map_info" args="$(arg path_map)" output="screen">
+    <param name="frame_id" value="map"/>
+    <remap from="map" to="/map_info"/>
+    <remap from="map_metadata" to="/map_info/map_metadata"/>
+  </node>
+
+</launch>

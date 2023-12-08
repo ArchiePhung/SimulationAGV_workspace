@@ -1,0 +1,10 @@
+<launch>
+
+     <!-- chay chu trinh don khach -->
+     <!-- <node pkg="sti_module" name="parking_v9" type="parking_v9.py" /> -->
+     <node pkg="sti_module" name="getPoseRobot" type="getPoseRobot" output="screen"/>
+     <node pkg="sti_modbus" name="rtu_master" type="rtu_master.py" output="screen"/>
+     <node name="quytrinh" pkg="sti_module" type="quytrinh_v2.py" output="screen"/>
+     <node pkg="sti_module" name="ghi_LOG" type="ghi_LOG" output="screen"/>
+
+</launch>

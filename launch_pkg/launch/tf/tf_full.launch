@@ -1,0 +1,10 @@
+<launch>
+    <!-- camera -->
+        <node pkg="tf2_ros" type="static_transform_publisher" name="static_tf_base_d435" args="0.4854 0.0175 0.112 0 0 0 base_footprint d435_link" />
+    <!-- lidar -->
+        <!-- SICK tim551 -->
+        <node pkg="tf2_ros" type="static_transform_publisher" name="base_footprint_to_laser_tim551" args="-0.36245 -0.26255 0.237 -2.35619449019 0 0 base_footprint laser_tim551" />
+        <!-- SICK lms100-->
+        <node pkg="tf2_ros" type="static_transform_publisher" name="base_footprint_to_laser_lms100" args="0.3625 0.2625 0.237 0.78539816339 0 0 base_footprint laser_lms100" /> 
+        <!-- ERROR : k len lidar tim551--> 
+</launch>
