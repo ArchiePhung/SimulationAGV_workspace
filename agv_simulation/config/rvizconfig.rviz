@@ -63,6 +63,8 @@ Visualization Manager:
           Value: true
         agv1_safety:
           Value: true
+        world:
+          Value: true
       Marker Alpha: 1
       Marker Scale: 3
       Name: TF
@@ -70,7 +72,10 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        {}
+        world:
+          agv1:
+            agv1_safety:
+              {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -108,7 +113,7 @@ Visualization Manager:
       Head Length: 0.20000000298023224
       Length: 0.30000001192092896
       Line Style: Billboards
-      Line Width: 0.10000000149011612
+      Line Width: 0.05000000074505806
       Name: Path
       Offset:
         X: 0

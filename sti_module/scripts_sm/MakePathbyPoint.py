@@ -378,11 +378,11 @@ class MakePathByPoint():
         # param
         self.angleStop = rospy.get_param('~angleStop',165.)
 
-        rospy.Subscriber('/robotPose_nav', PoseStamped, self.callback_poseRobot, queue_size = 20)
-        self.is_pose_robot = False
-        self.poseRbMa = Pose()
-        self.poseStampedAGV = PoseStamped()
-        self.theta_robotNow = 0.0
+        # rospy.Subscriber('/robotPose_nav', PoseStamped, self.callback_poseRobot, queue_size = 20)
+        # self.is_pose_robot = False
+        # self.poseRbMa = Pose()
+        # self.poseStampedAGV = PoseStamped()
+        # self.theta_robotNow = 0.0
 
         rospy.Subscriber('/move_request', LineRequestMove, self.callback_moveRequest)
         self.dataRequestMove = LineRequestMove() 
@@ -423,17 +423,17 @@ class MakePathByPoint():
         self.pathInfo = PathInfo()
         self.listIDPath = []
 
-    def callback_poseRobot(self, data):
-        self.poseStampedAGV = data
-        self.poseRbMa = data.pose
-        quata = ( self.poseRbMa.orientation.x,\
-                self.poseRbMa.orientation.y,\
-                self.poseRbMa.orientation.z,\
-                self.poseRbMa.orientation.w )
-        euler = euler_from_quaternion(quata)
-        self.theta_robotNow = euler[2]
+    # def callback_poseRobot(self, data):
+    #     self.poseStampedAGV = data
+    #     self.poseRbMa = data.pose
+    #     quata = ( self.poseRbMa.orientation.x,\
+    #             self.poseRbMa.orientation.y,\
+    #             self.poseRbMa.orientation.z,\
+    #             self.poseRbMa.orientation.w )
+    #     euler = euler_from_quaternion(quata)
+    #     self.theta_robotNow = euler[2]
 
-        self.is_pose_robot = True
+    #     self.is_pose_robot = True
 
     def calAngleThreePoint(self, x1, y1, x2, y2, x3, y3):
         dx1 = x1 - x2
@@ -623,7 +623,7 @@ class MakePathByPoint():
                             point.header.stamp = rospy.Time.now()
                             point.pose.position.x = j[0]
                             point.pose.position.y = j[1]
-                            point.pose.position.z = -2.45
+                            point.pose.position.z = 0                   # -2.45
                             point.pose.orientation.w = 1.
                             # print(point)
                             self.msgPath.poses.append(point)

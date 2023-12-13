@@ -1,4 +1,5 @@
-
-float32 linear_x
-float32 linear_y
-float32 angular_z
+int8 selectMode
+int16 angleRequest
+int16 velRequest
+geometry_msgs/Twist twist
+int8 modeStop

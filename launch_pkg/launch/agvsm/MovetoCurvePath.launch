@@ -19,14 +19,14 @@
   <!-- Điều hướng AGV  -->
   <node name="MakePathbyPoint" pkg="sti_module" type="MakePathbyPoint.py" output="screen"/>
 
-  <!-- <node name="MovetoStraightPath" pkg="sti_module" type="test_movetoZigzagPath.py" output="screen">
+  <node name="MovetoCurvePath" pkg="sti_module" type="test_movetoCurvePath.py" output="screen">
     <rosparam command="load" file="$(find sti_module)/config/param_lagv.yaml" />
-  </node> -->
+  </node>
   
   <!-- Vị trí của AGV trên Rviz -->
-  <!-- <node name="agv_sim" pkg="agv_simulation" type="agv_sim.py" respawn="false" >
+  <node name="agv_sim" pkg="agv_simulation" type="agvpos_sim.py" respawn="false" >
     <rosparam command="load" file="$(find agv_simulation)/config/param_lagv.yaml" />
-  </node> -->
+  </node>
 
   <!-- Hiển thị qua rviz -->
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find agv_simulation)/config/rvizconfig.rviz" />  

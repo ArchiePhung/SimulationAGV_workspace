@@ -117,7 +117,7 @@ class Fake_stiClient():
 
                     self.pathID = 1
                     self.typePath = self.quadraticBezierCurves
-                    self.direction = 1
+                    self.direction = 0
                     self.pointOne.position.x = 0.0
                     self.pointOne.position.y = 0.0
                     self.pointSecond.position.x = 5.0
@@ -125,7 +125,7 @@ class Fake_stiClient():
                     self.velocity = 0.6
                     self.radius = 0.0
                     self.pointCenter = Pose()
-                    self.numberPts = 25
+                    self.numberPts = 100
                     self.pointMid.position.x = 0.0
                     self.pointMid.position.y = 5.0
                     self.movableZone = 0
