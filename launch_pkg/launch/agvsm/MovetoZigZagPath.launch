@@ -12,22 +12,12 @@
     <remap from="robot_description" to="agv1_description" />
   </node>
 
-  <!-- App GUI -->
-  <include file="$(find app_ros)/launch/app_ros.launch"/>
-
   <!-- robot launch -->
   <!-- Nhận lộ trình và lỗi từ stiControl_fake -->
   <node name="stiClient_fake" pkg="sti_control" type="stiClient_fake.py" /> 
 
-  <node name="stiDevice_fake" pkg="agv_simulation" type="stiDevice_fake.py" >
-    <rosparam command="load" file="$(find agv_simulation)/config/param_lagv.yaml" />
-  </node>
-
-  <!-- Điều phối chung -->
-  <include file="$(find sti_control)/launch/stiControl.launch"/>
-
   <!-- Điều hướng AGV  -->
-  <node name="goal_control" pkg="sti_module" type="goal_control_lagvSM.py" output="screen">
+  <node name="MovetoStraightPath" pkg="sti_module" type="test_movetoZigzagPath.py" output="screen">
     <rosparam command="load" file="$(find sti_module)/config/param_lagv.yaml" />
   </node>
   

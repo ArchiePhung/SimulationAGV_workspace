@@ -42,9 +42,9 @@ class AGV_SIM():
         self.data_agv_pose = Pose()
 
         # -- Mô tả vị trí ban đầu của AGV hiển thị trên tf rviz   -- 
-        self.x_start = rospy.get_param('~x_start')
-        self.y_start = rospy.get_param('~y_start')
-        self.theta_start = rospy.get_param('~theta_start')
+        self.x_start = rospy.get_param('x_start')
+        self.y_start = rospy.get_param('y_start')
+        self.theta_start = rospy.get_param('theta_start')
         
         # -- Mô tả vị trí trước đó của AGV --
         self.agv_pre_pose_x = self.x_start

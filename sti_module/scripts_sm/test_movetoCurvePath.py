@@ -5,10 +5,10 @@
 
 """
 Nội dung code:
-Input: Lộ trình đường thẳng + Vị trí của AGV 
-Output: AGV di chuyển trên lộ trình đường thẳng đó
+Input: Lộ trình đường cong + Vị trí của AGV 
+Output: AGV di chuyển trên đường cong đó
 
-Xác nhận kết quả: OK
+Xác nhận kết quả: 
 
 """
 
@@ -19,19 +19,141 @@ from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker, MarkerArray
 
+from math import sqrt, pow, atan, acos, modf, atan2, fabs, tan, degrees, radians
 from math import pi as PI
-from math import atan2, sin, cos, sqrt , fabs, acos, atan
 import tf
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
 from sti_msgs.msg import *
 from agv_simulation.msg import * 
 from nav_msgs.msg import Path
+import numpy as np
 
+class Bezier_Curve():
+	def __init__(self, _x1, _y1, _x2, _y2, _x3, _y3):
+		# ft Berzier Curve 
+		# Px = pow((1-t), 2) * _x1 + 2 * (1-t) * t * _x2 + t ** 2 * _x3
+		# Py = pow((1-t), 2) * _y1 + 2 * (1-t) * t * _y2 + t ** 2 * _y3
+		self.firstPoint_x = _x1
+		self.firstPoint_y = _y1
+		self.midPoint_x = _x2
+		self.midPoint_y = _y2
+		self.secondPoint_x = _x3
+		self.secondPoint_y = _y3
+
+	# Cập nhật lại thông số.
+	def update_spec(self, _x1, _y1, _x2, _y2, _x3, _y3):
+		self.firstPoint_x = _x1
+		self.firstPoint_y = _y1
+		self.midPoint_x = _x2
+		self.midPoint_y = _y2
+		self.secondPoint_x = _x3
+		self.secondPoint_y = _y3
+
+	# Nhận tọa độ của các điểm trên đường cong: 0 -> 1
+	def getPoint_curveFormula(self, t):
+		Px = (1-t)**2 * self.firstPoint_x + 2 * (1-t) * t * self.midPoint_x + t ** 2 * self.secondPoint_x
+		Py = (1-t)**2 * self.firstPoint_y + 2 * (1-t) * t * self.midPoint_y + t ** 2 * self.secondPoint_y
+
+		return (Px, Py)	
+	
+	# Nhận góc của đường thẳng tiếp tuyến với đường cong tại giá trị t: 0 -> 1
+	def getAngle_TangentLine(self, t):
+		Pxdot = 2 * (1-t) * self.firstPoint_x + (2 - 4 * t) * self.midPoint_x + 2 * t * self.secondPoint_x
+		Pydot = 2 * (1-t) * self.firstPoint_y + (2 - 4 * t) * self.midPoint_y + 2 * t * self.secondPoint_y
+
+		return atan2(Pydot, Pxdot)
+
+	# Nhận chiều dài của đường cong
+	def getLength_curveFormula(self, t):
+		Pxdot = 2 * (1-t) * self.firstPoint_x + (2 - 4 * t) * self.midPoint_x + 2 * t * self.secondPoint_x
+		Pydot = 2 * (1-t) * self.firstPoint_y + (2 - 4 * t) * self.midPoint_y + 2 * t * self.secondPoint_y
+
+		return sqrt(Pxdot**2 + Pydot**2)
+
+	# Nhận bán kính của đường cong tại thời điểm t
+	def getRadius_curveFormula(self, t):	
+		# ft Berzier Curve Derive level 1
+		Pxdot = 2 * (1-t) * self.firstPoint_x + (2 - 4 * t) * self.midPoint_x + 2 * t * self.secondPoint_x
+		Pydot = 2 * (1-t) * self.firstPoint_y + (2 - 4 * t) * self.midPoint_y + 2 * t * self.secondPoint_y
+
+		# ft Berzier Curve Derive level 2
+		Px2dot = -2 * self.firstPoint_x - 4 * self.midPoint_x + 2 * self.secondPoint_x
+		Py2dot = -2 * self.firstPoint_y - 4 * self.midPoint_y + 2 * self.secondPoint_y
+
+		R = pow((Pxdot ** 2 + Pydot ** 2), 3/2) / (Pxdot * Py2dot - Pydot * Px2dot)
+		# print(R)
+		return R
+
+class Point():
+  def __init__(self, _x=0, _y=0):
+    self.x = _x
+    self.y = _y
+    
+class QuadraticBezierCurves():
+    def __init__(self, _pointOne=Point(), _pointSecond=Point(), _midpoint=Point(), _typeDefine=0,_angleOne=0., _angleSecond=0., _numberPts=0 ):
+
+        self.pointOne = _pointOne
+        self.pointSecond = _pointSecond
+        self.midPoint = _midpoint
+        if _typeDefine == 1:
+            a1, b1, c1 = self.findStraightLineByAngleAndPoint(self.pointOne, _angleOne)
+            a2, b2, c2 = self.findStraightLineByAngleAndPoint(self.pointSecond, _angleSecond)
+            if b1 == 0:
+                x = -c1/a1
+                y = (-c2-a2*x)/b2
+
+            else:
+                x = ((b2*c1)/b1 - c2)/(a2 - (b2*a1)/b1)
+                y = (-c1-a1*x)/b1
+
+            # x = (-c1+b2)/(a1-a2)
+            # y = a1*x + c1
+            self.midPoint = Point(x,y)
+            print(self.midPoint.x ,self.midPoint.y)
+        # self.numberPts = _numberPts
+
+        self.numberPts = self.findNumberPts()
+
+        self.t = np.array([i*1/self.numberPts for i in range(0,self.numberPts+1)])
+
+        print("Make a Quadratic Bezier Curves ")
+
+    def findStraightLineByAngleAndPoint(self, _point, _angle):
+        if fabs(_angle) == PI/2.:
+            return 1, 0, -_point.x
+        else:
+            k = tan(_angle)
+            return k, -1., (-1)*k*_point.x + _point.y
+
+
+    def findNumberPts(self):
+        dis1 = self.calculate_distance(self.pointOne.x, self.pointOne.y, self.midPoint.x, self.midPoint.y)
+        dis2 = self.calculate_distance(self.midPoint.x, self.midPoint.y, self.pointSecond.x, self.pointSecond.y)
+        dis3 = self.calculate_distance(self.pointOne.x, self.pointOne.y, self.pointSecond.x, self.pointSecond.y)
+
+        return int(max(dis1, dis2, dis3)/0.01)
+
+
+    def calculate_distance(self, x1, y1, x2, y2):
+        x = x2 - x1
+        y = y2 - y1
+        return sqrt(x*x + y*y)
+
+    def slip(self):
+        listPoint = np.empty((0,2), dtype=float)
+        for i in self.t:
+            _x = (1-i)*((1-i)*self.pointOne.x + i*self.midPoint.x) + i*((1-i)*self.midPoint.x + i*self.pointSecond.x)
+            _y = (1-i)*((1-i)*self.pointOne.y + i*self.midPoint.y) + i*((1-i)*self.midPoint.y + i*self.pointSecond.y)
+
+            listPoint = np.append(listPoint, np.array([[_x, _y]]), axis=0)
+
+        return listPoint
+    
 class robot_AGV():
 	def __init__(self):
 		# -- Khởi tạo ROS --
-		rospy.init_node('MovetoStraightPath', anonymous=False)
+		rospy.init_node('MovetoCurvePath', anonymous=False)
 		self.rate_hz = 50
 		self.rate = rospy.Rate(self.rate_hz)
 		
@@ -82,10 +204,11 @@ class robot_AGV():
 		# -- Gửi trạng thái của robot 
 		self.pub_status = rospy.Publisher('/robot_status', robot_status, queue_size = 20)
 		self.robot_status = robot_status()
-		self.define_var()
+		self.define_AGVvar()
+		self.define_Pathvar()
+		self.define_Systemvar()
 
-	def define_var(self):
-		# agv info
+	def define_AGVvar(self):
 		self.vel_x = 1.2
 		self.rate_cmdvel = 30 
 		self.time_tr = rospy.get_time()  
@@ -122,15 +245,25 @@ class robot_AGV():
 
 		self.dis_gt = 0.3
 		self.kc_qd = 0.0
+
+		self.R_move = 0.5
 	
-		# tranjectory info
+	def define_Pathvar(self):
 		self.path_index = 0
 		self.agv_frame =  "agv1"
 		self.origin_frame = "world"
 
 		self.tol_simple = rospy.get_param('~tol_simple')
 
-		# -- system var --
+		self.curve_path = Bezier_Curve(0, 0, 0, 0, 0, 0)
+		self.nb_curvePart = 5
+
+		# for screen on rviz
+		self.nb_pointPath = 25
+		self.path_delta = 0.04
+		self.path_t = 0
+
+	def define_Systemvar(self):
 		self.process = 1
 		self.is_first_callback = True
 
@@ -150,7 +283,7 @@ class robot_AGV():
 		point.pose.position.x = x
 		point.pose.position.y = y
 		point.pose.position.z = 0
-		point.pose.orientation.x = 0
+		point.pose.orientation.x = 0 ###
 		point.pose.orientation.y = 0
 		point.pose.orientation.z = 0.
 		point.pose.orientation.w = 1.0
@@ -161,15 +294,29 @@ class robot_AGV():
 		self.is_request_move = True
 
 		if self.is_first_callback == True:
-			self.len_tranjectory = len(self.req_move.list_x)
+			self.curve_path.update_spec(self.req_move.list_x[0], self.req_move.list_y[0], \
+			       							self.req_move.list_x[1], self.req_move.list_y[1], \
+												self.req_move.list_x[2], self.req_move.list_y[2])
+			
+			# self.len_tranjectory = len(self.req_move.list_x)
 			self.path_plan.header.frame_id = self.origin_frame
 			self.path_plan.header.stamp = rospy.Time.now()
-			self.path_plan.poses.append(self.point_path(self.x_start, self.y_start))
-			self.path_plan.poses.append(self.point_path(self.req_move.list_x[1], self.req_move.list_y[1]))
-	
+			self.path_plan.poses.append(self.point_path(self.curve_path.firstPoint_x, self.curve_path.firstPoint_y))
+			self.path_t = self.path_t + self.path_delta	
+
+			while self.path_t <= 1:
+				x, y = self.curve_path.getPoint_curveFormula(self.path_t)               
+				self.path_plan.poses.append(self.point_path(x, y))
+				self.path_t = self.path_t + self.path_delta	
+		
 			self.pub_path_global.publish(self.path_plan)
 			self.is_first_callback = False
 
+	# tìm điểm giao giữa đường cong lộ trình và vùng di chuyển của AGV.
+	# def PointBetweenAGVandPath(self, agv_x, agv_y):
+	# 	px, py = self.curve_path.getPoint_curveFormula()
+	# 	return x_intersection, y_intersection
+		
 	# chuyển đổi tọa độ của 1 điểm bất kì theo tọa độ của AGV 							
 	def convert_relative_coordinates(self, X_cv, Y_cv):
 		angle = -self.theta_rb_ht
@@ -242,7 +389,7 @@ class robot_AGV():
 				angle_fn = angle_fnt
 
 		# print(angle_fn)
-		return angle_fn
+		return angle_fn  
 
 	# -- hàm quay robot 1 góc 
 	def turn_ar(self, theta, tol_theta, vel_rot):

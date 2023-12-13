@@ -5,11 +5,10 @@
 
 """
 Nội dung code:
-Input: Lộ trình đường thẳng + Vị trí của AGV 
+Input: Lộ trình các đường gấp khúc + Vị trí của AGV, AGV ban đầu không nằm trên lộ trình
 Output: AGV di chuyển trên lộ trình đường thẳng đó
 
-Xác nhận kết quả: OK
-
+Xác nhận kết quả: 
 """
 
 import rospy
@@ -31,14 +30,14 @@ from nav_msgs.msg import Path
 class robot_AGV():
 	def __init__(self):
 		# -- Khởi tạo ROS --
-		rospy.init_node('MovetoStraightPath', anonymous=False)
+		rospy.init_node('MovetoZigzagPath', anonymous=False)
 		self.rate_hz = 50
 		self.rate = rospy.Rate(self.rate_hz)
 		
 		# -- mô tả vị trí ban đầu của AGV trên rviz -- 
-		self.x_start = rospy.get_param('~x_start')
-		self.y_start = rospy.get_param('~y_start')
-		self.theta_start = rospy.get_param('~theta_start')
+		self.x_start = rospy.get_param('x_start')
+		self.y_start = rospy.get_param('y_start')
+		self.theta_start = rospy.get_param('theta_start')
 
 		# -- mô tả vị trí trước đó của agv -- 
 		self.x_prepos = self.x_start
@@ -123,12 +122,14 @@ class robot_AGV():
 		self.dis_gt = 0.3
 		self.kc_qd = 0.0
 	
+		self.tol_simple = rospy.get_param('~tol_simple')
+		self.tol_target = 0.02
+
 		# tranjectory info
 		self.path_index = 0
 		self.agv_frame =  "agv1"
 		self.origin_frame = "world"
-
-		self.tol_simple = rospy.get_param('~tol_simple')
+		self.len_tranjectory = 0
 
 		# -- system var --
 		self.process = 1
@@ -165,8 +166,10 @@ class robot_AGV():
 			self.path_plan.header.frame_id = self.origin_frame
 			self.path_plan.header.stamp = rospy.Time.now()
 			self.path_plan.poses.append(self.point_path(self.x_start, self.y_start))
-			self.path_plan.poses.append(self.point_path(self.req_move.list_x[1], self.req_move.list_y[1]))
 	
+			for i in range(0, self.len_tranjectory):
+				self.path_plan.poses.append(self.point_path(self.req_move.list_x[i], self.req_move.list_y[i]))
+
 			self.pub_path_global.publish(self.path_plan)
 			self.is_first_callback = False
 
@@ -198,13 +201,13 @@ class robot_AGV():
 
 		return vel_th
 
-	# -- hàm pub vận tốc robot 
+	# -- hàm gửi vận tốc cho agv di chuyển
 	def pub_cmdVel(self, twist , rate):
 		if rospy.get_time() - self.time_tr > float(1/rate) : # < 20hz 
 			self.time_tr = rospy.get_time()
 			self.pub_cmd_vel.publish(twist)
 
-	# -- góc giữa đường lộ trình và góc robot
+	# -- hàm đưa ra góc lệch giữa robot và lộ trình. 
 	def find_angle_between(self, a, b, angle_rb):
 		angle_bt = 0.0
 		angle_fn = 0.0
@@ -244,7 +247,7 @@ class robot_AGV():
 		# print(angle_fn)
 		return angle_fn
 
-	# -- hàm quay robot 1 góc 
+	# -- Hàm thực hiện robot quay 1 góc theta
 	def turn_ar(self, theta, tol_theta, vel_rot):
 		if fabs(theta) > tol_theta: # +- 10 do
 			if theta > 0: #quay trai
@@ -281,7 +284,7 @@ class robot_AGV():
 		else : 
 			return -10 
 
-	# -- robot dừng 
+	# -- Hàm dừng robot
 	def stop(self):
 		for i in range(2):
 			self.pub_cmd_vel.publish(Twist())
@@ -413,13 +416,20 @@ class robot_AGV():
 					self.process = 2
 
 			elif self.process == 2:
-				self.firstPoint_x = self.poseRbMa.position.x
-				self.firstPoint_y = self.poseRbMa.position.y
-				self.secondPoint_x = self.req_move.list_x[self.path_index + 1]
-				self.secondPoint_y = self.req_move.list_y[self.path_index + 1]
+				if self.path_index == 0:
+					self.firstPoint_x = self.x_start
+					self.firstPoint_y = self.y_start
+					self.secondPoint_x = self.req_move.list_x[self.path_index]
+					self.secondPoint_y = self.req_move.list_y[self.path_index]
+				else:
+					self.firstPoint_x = self.secondPoint_x
+					self.firstPoint_y = self.secondPoint_y
+					self.secondPoint_x = self.req_move.list_x[self.path_index]
+					self.secondPoint_y = self.req_move.list_y[self.path_index]
 
+					print("Tao đã vô đây rồi nè !")
 				self.is_need_turn_step1 = 1
-				self.process = 3
+				self.process = 3    
 
 			# -- Quay AGV về đường mục tiêu -- 
 			elif self.process == 3: 
@@ -483,12 +493,26 @@ class robot_AGV():
 				else:
 					v_x = self.min_vel_x_gh + ((self.angle_find_vel - fabs(self.theta))/self.angle_find_vel)*(self.vel_x - self.min_vel_x_gh)
 
-				if self.distance_goal <= self.tol_simple or self.kc_con_lai <= self.tol_simple:    # kiểm tra AGV gần tới điểm cuối và chuyển lộ trình tiếp theo 
-					self.stop()
-					self.process = 50                    # AGV hoàn thành di chuyển 
-				else:
-					self.v_th_send = self.control_navigation(self.x_td_goal, self.y_td_goal, v_x)
-				            
+				if self.path_index < self.len_tranjectory - 1:
+					if self.distance_goal <= self.tol_simple or self.kc_con_lai <= self.tol_simple:    # kiểm tra AGV gần tới điểm cuối và chuyển lộ trình tiếp theo 
+						self.stop()
+						self.process = 2                    # chuyển về process 2 để kiểm tra lộ trình cần di chuyển.
+						self.path_index += 1
+						del self.path_plan.poses[0]                     # xóa lộ trình cũ đi 
+						self.pub_path_global.publish(self.path_plan)
+					else:
+						self.v_th_send = self.control_navigation(self.x_td_goal, self.y_td_goal, v_x) 
+
+				elif self.path_index == self.len_tranjectory - 1:
+					if self.distance_goal <= self.tol_target or self.kc_con_lai <= self.tol_target:    # agv chay het diem
+						self.stop()
+						self.process = 50                    # 
+						self.path_index = 0
+						del self.path_plan.poses[0]                     
+						self.pub_path_global.publish(self.path_plan)
+					else:
+						self.v_th_send = self.control_navigation(self.x_td_goal, self.y_td_goal, v_x)    
+
 				twist = Twist()
 				twist.linear.x = v_x
 				twist.angular.z = self.v_th_send

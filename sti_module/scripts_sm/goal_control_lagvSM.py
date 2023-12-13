@@ -301,6 +301,25 @@ class goalControl():
         self.NN_infoRespond = data
         self.is_recv_NNinfoRespond = True
 
+    # def move_callback(self, data):
+    #     self.req_move = data
+    #     self.is_request_move = True
+
+    #     if self.is_first_pub == True:
+    #         self.len_tranjectory = len(self.req_move.list_x)
+    #         for i in range(self.len_tranjectory):
+    #             point = PoseStamped()
+    #             point.header.frame_id = self.origin_frame
+    #             point.header.stamp = rospy.Time.now()
+    #             point.pose.position.x = self.req_move.list_x[i]
+    #             point.pose.position.y = self.req_move.list_y[i]
+    #             point.pose.position.z = 0.
+    #             point.pose.orientation.w = 1.0
+    #             self.path_plan.poses.append(point)
+
+    #         self.pub_path_global.publish(self.path_plan)
+    #         self.is_first_pub = False
+    
     def calculate_distance(self, x1, y1, x2, y2):
         x = x2 - x1
         y = y2 - y1

@@ -11,18 +11,18 @@ import rospy
 
 from sti_msgs.msg import *
 from geometry_msgs.msg import *
-from agvball_simulation.msg import *
+from agv_simulation.msg import *
 import math
 import time 
 
 class Fake_stiClient1():
     def __init__(self):
         # -- init node -- 
-        rospy.init_node('stiClient1_fake', anonymous=False)
+        rospy.init_node('stiClient_fake', anonymous=False)
         
         # -- node publish -- 
         # self.agv_name = rospy.get_param('~agv_name')
-        self.pub_agv1_requestMove = rospy.Publisher('/request_move_fake', Move_request, queue_size = 10)
+        self.pub_agv1_requestMove = rospy.Publisher('/request_move', Move_request, queue_size = 10)
         self.data_agv1_requestMove = Move_request()
 
         self.rate = rospy.Rate(10.0)
@@ -60,8 +60,8 @@ class Fake_stiClient1():
     def run(self):
         while not rospy.is_shutdown():
             if self.mode == 0:                                           # khi các AGV chưa chạy 
-                if time.time() - self.DieTime_pub < 3:                   # chờ 2s rồi pub lộ trình tiếp theo
-                    # -- lộ trình AGV1 --
+                if time.time() - self.DieTime_pub < 1:                   # chờ 2s rồi pub lộ trình tiếp theo
+                    # -- Move to Zigzag Line --
                     # self.agv1_list_pub_x = [0,3,3,4,4]
                     # self.agv1_list_pub_y = [2,2,4,4,5]
                     # self.agv1_list_pub_x = [0,2,2,4,5]
@@ -76,12 +76,17 @@ class Fake_stiClient1():
 
                     # self.agv1_list_pub_x = [0,0,5]
                     # self.agv1_list_pub_y = [0,5,5]
-                    self.agv1_list_pub_x = [8,8,4]
-                    self.agv1_list_pub_y = [-4,0,0]
+
+                    # AGV Move to Straigth Line
+                    # self.agv1_list_pub_x = [0,5,0,0,0]
+                    # self.agv1_list_pub_y = [0,5,0,0,0]
 
                     # gửi lộ trình đường cong
-                    # self.agv1_list_pub_x = [-1,5]
-                    # self.agv1_list_pub_y = [3,5]                    
+                    self.agv1_list_pub_x = [0,0,5]
+                    self.agv1_list_pub_y = [0,5,5]
+                     
+                    # self.agv1_list_pub_x = [8,8,4]
+                    # self.agv1_list_pub_y = [-4,0,0]                    
 
                 else:
 
@@ -95,13 +100,13 @@ class Fake_stiClient1():
                     self.mode = 1
 
             elif self.mode == 1:
-                if self.msg_processCollision.is_agv1_collide == 0:
-                    if len(self.msg_detectErr.listError) > 0:
-                        self.data_agv1_requestMove.enable = 0
-                    else:
-                        self.data_agv1_requestMove.enable = 1
-                else:
-                    self.data_agv1_requestMove.enable = 0
+                # if self.msg_processCollision.is_agv1_collide == 0:
+                #     if len(self.msg_detectErr.listError) > 0:
+                #         self.data_agv1_requestMove.enable = 0
+                #     else:
+                #         self.data_agv1_requestMove.enable = 1
+                # else:
+                #     self.data_agv1_requestMove.enable = 0
 
                 # if (self.msg_detectCollision.agv_pairs == "12" or self.msg_detectCollision.agv_pairs == "21" or
                 #         self.msg_detectCollision.agv_pairs == "13" or self.msg_detectCollision.agv_pairs == "31" or

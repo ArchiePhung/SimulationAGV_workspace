@@ -96,7 +96,7 @@ add_message_files(
 	ListPointRequestMove.msg
 	LineRequestMove.msg
 	PathInfo.msg
-	
+	StopPoint.msg
 	#OC_test_status.msg
 )	
 

@@ -1,8 +1,8 @@
 # agv_start_x:           2.0
 # agv_start_y:           2.0
-x_start: 0.0
-y_start: 0.0
-theta_start: 0.0
+# x_start: -2.0
+# y_start: -2.0
+# theta_start: 0.0
 
 time_downVolt: 2000           # miliseconds
 delta_voltage: 0.005         # Volts

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3  
 # -*- coding: utf-8 -*-
 # Dev: Phùng Quý Dương STI 
-# Latest Modify: 19/5/2023
+# Latest Modify: 08/12/2023
 
 """
 Nội dung code:
