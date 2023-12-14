@@ -8,6 +8,12 @@ Nội dung code:
 Input: Lộ trình đường cong + Vị trí của AGV 
 Output: AGV di chuyển trên đường cong đó
 
+Vấn đề hiện tại: 
+14/12/2023: AGV mô phỏng đã chạy được theo lộ trình gửi xuống, nhưng đang chỉ theo một chiều ???
+     + Nếu chạy theo chiều đúng, thì nếu để góc AGV = 0 >> thì AGV chạy sai
+     + Chạy chiều bị sai, AGV phải quay 180 rồi ms bám vào đường lộ trình. 
+
+
 Xác nhận kết quả: 
 
 """
@@ -421,20 +427,48 @@ class robot_AGV(threading.Thread):
 	# input: Tọa độ điểm bất kì theo tọa độ của AGV + vận tốc dài mong muốn của AGV 
 	# output: Vận tốc góc mong muốn của AGV 
 	"""
-	def control_navigation(self, X_point_goal, Y_point_goal, vel_x):
+	# def control_navigation(self, X_point_goal, Y_point_goal, vel_x):
+	# 	vel_th = 0.0
+	# 	l = (X_point_goal*X_point_goal) + (Y_point_goal*Y_point_goal)
+	# 	if Y_point_goal == 0:
+	# 		print(Y_point_goal)
+	# 		Y_point_goal = 0.0001
+
+	# 	r = l/(2*fabs(Y_point_goal))
+	# 	vel = vel_x/r        # vel : omega 
+
+	# 	if Y_point_goal > 0:
+	# 		vel_th = vel
+	# 	else:
+	# 		vel_th = -vel
+
+	# 	return vel_th
+
+	def SIGN(self, num):
+		if num > 0:
+			return 1
+		elif num < 0:
+			return -1
+		return 0
+	
+	# Archie: cung giống với function phía trên
+	def control_navigation(self, X_point_goal, Y_point_goal, vel_x): # 1 goal phia truoc | -1 goal phia sau
 		vel_th = 0.0
-		l = (X_point_goal*X_point_goal) + (Y_point_goal*Y_point_goal)
-		if Y_point_goal == 0:
-			print(Y_point_goal)
-			Y_point_goal = 0.0001
+		xGoal = X_point_goal
+		yGoal = Y_point_goal
 
-		r = l/(2*fabs(Y_point_goal))
-		vel = vel_x/r        # vel : omega 
-
-		if Y_point_goal > 0:
-			vel_th = vel
+		if fabs(yGoal) <= 0.005:
+			vel_th = 0.
+			
 		else:
-			vel_th = -vel
+			l = (xGoal*xGoal) + (yGoal*yGoal)
+			r = l/(2*fabs(yGoal))
+			# print(vel_x, r, l)
+			vel = fabs(vel_x)/r
+			if yGoal > 0:
+				vel_th = vel*self.SIGN(vel_x)
+			else:
+				vel_th = -vel*self.SIGN(vel_x)
 
 		return vel_th
 
@@ -727,14 +761,14 @@ class robot_AGV(threading.Thread):
 				
 		return False         
 
-	def checkPathOutOfRange(self):
+	def checkPathOutOfRange(self):                                # Archiep: Ý nghĩa đúng của hàm này là gì ??
 		self.warnAGV = 0
 		if self.isGoalNearest: # tim diem goal gan nhat
 			goalNearNow = InfoPathFollowing()
 			goalNearNow = self.infoGoalNearest
 			disNear = self.disRbToGoalNearest
 
-			if disNear > goalNearNow.movableZone:
+			if disNear > goalNearNow.movableZone:       # Archiep: ban đầu là " >= "
 				self.warnAGV = 3
 				return -1 # bao loi qua khoang cachs -> yeu cau di chuyen gan lai
 			
@@ -860,7 +894,7 @@ class robot_AGV(threading.Thread):
 		
 		return 0
 	
-	def findLookAheadByVel(self, curr_velocity):
+	def findLookAheadByVel(self, curr_velocity):               # Archiep: Ý nghĩa đúng của hàm này là gì ??
 		a = 0.
 		b = 0.
 		if curr_velocity >= self.max_linearVelocity:
@@ -1194,7 +1228,7 @@ class robot_AGV(threading.Thread):
 			if xcv >= -toleranceX and fabs(ycv) < 0.15:
 				isFinish = True
 
-		print(ss_x, ss_y, dis, self.disDeceleration, mode)
+		# print(ss_x, ss_y, dis, self.disDeceleration, mode)                      # comment by Archiep 
 		if (fabs(ss_x) <= toleranceX and fabs(ss_y) <= toleranceY) or dis <= tolerance_radius or isFinish:
 			self.stop()
 			self.stepFollowGoalStop = 0. # chung
@@ -1205,7 +1239,7 @@ class robot_AGV(threading.Thread):
 				return 2 # den diem Stop Done
 			
 			else:
-				print(self.finishPoint.X, self.finishPoint.Y, self.target_x, self.target_y)
+				# print(self.finishPoint.X, self.finishPoint.Y, self.target_x, self.target_y)            # Archiep 
 				if self.finishPoint.X == self.target_x and self.finishPoint.Y == self.target_y: # hoan thanh diem target
 					print("Done Achieve Target Goal! next Step is rotate target angle (^-^)")
 					return 5
@@ -1241,7 +1275,7 @@ class robot_AGV(threading.Thread):
 					self.statusVel = 0
 
 				self.curr_velocity = self.getVeloctity(0, self.statusVel)
-				print(self.curr_velocity, self.statusVel, self.infoPathFollow.velocity)
+				# print(self.curr_velocity, self.statusVel, self.infoPathFollow.velocity)         # Archiep
 
 				if self.curr_velocity != 0. :
 					if self.getWaitPoint(poseX, poseY, self.curr_velocity):
@@ -1278,7 +1312,7 @@ class robot_AGV(threading.Thread):
 
 		return infoPoint
 
-	def moveIntoPath(self):
+	def moveIntoPath(self):                            # Archiep: Ý nghĩa của hàm này là gì ??? Di chuyển vào đường ??
 		indexSelect = -1
 		lookahead = self.findLookAheadByVel(self.velFollowOutOfRange)
 		numpoint = len(self.datalistPointRequestMove.infoPoint)
@@ -1315,6 +1349,8 @@ class robot_AGV(threading.Thread):
 
 		elif self.stepCheckStart == 1:
 			angle = self.angleBetweenRobotAndPath2(self.saveAngle)
+			print("angle between robot and path is: ", angle)
+
 			gt = self.turn_ar(angle, self.tolerance_rot_step1, self.vel_rot_step1)
 			if gt == -10:
 				self.stop()
@@ -1476,7 +1512,7 @@ class robot_AGV(threading.Thread):
 
 			elif self.process == 15: # kiem tra vi tri AGV voi duong dan 
 				isChangeOrReset = self.checkResetOrTargetChange()
-				if isChangeOrReset== 0:
+				if isChangeOrReset == 0:
 					stt = self.moveIntoPath()
 					if stt == 1:
 						print("Done move into path")

@@ -1,0 +1,11 @@
+{
+	"cmake.configureOnOpen": false,
+	"python.autoComplete.extraPaths": [
+		"/home/tiger/simulation_ws/devel/lib/python3/dist-packages",
+		"/opt/ros/noetic/lib/python3/dist-packages"
+	],
+	"python.analysis.extraPaths": [
+		"/home/tiger/simulation_ws/devel/lib/python3/dist-packages",
+		"/opt/ros/noetic/lib/python3/dist-packages"
+	]
+}

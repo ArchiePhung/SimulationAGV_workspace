@@ -15,4 +15,11 @@
 8. With test case AGV Move to Curve Path
 ==> roslaunch launch_pkg MovetoCurvePath.launch
 
-9. With test case AGV Move to Mixture Path with start AGV position outside this path. 
+9. With test case AGV Move to Mixture Path with start AGV position outside this path.
+
+10. Fake code AGV conveyor for AGV simulation
+*** Test thuật toán di chuyển
+==> roslaunch launch_pkg run_600simulation.launch
+PUB lộ trình: test_AGVconveyor.txt
+
+*** Test full 

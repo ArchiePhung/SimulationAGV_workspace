@@ -40,13 +40,19 @@ add_message_files(
   Reflector_data.msg
   Reflector_array.msg
   
-  #Control_conveyors.msg
-  #RTC_received.msg
-  #CPD_write.msg
-  #CAN_received.msg
-  #RTC_send.msg
-  #RTC_status.msg
-  #CAN_status.msg
+  Control_conveyors.msg
+  RTC_received.msg
+  CPD_write.msg
+  CPD_read.msg
+  CAN_received.msg
+  CAN_send.msg
+  CAN_status.msg
+  RTC_send.msg
+  RTC_status.msg
+  Status_conveyor.msg
+  
+  Navigation_query.msg
+  Navigation_respond.msg
   
 )
 

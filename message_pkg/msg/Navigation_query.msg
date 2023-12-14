@@ -1,0 +1,13 @@
+int32 	  modeMove
+int32     GoalID
+float64   GoalX
+float64   GoalY
+float64   GoalAngle
+int32[]   listID
+float64[] listX
+float64[] listY
+float64[] listDirectionTravel
+float64[] listAngleLine
+float64[] listRoadWidth
+float64[] listAngleFinal
+float64[] listSpeed

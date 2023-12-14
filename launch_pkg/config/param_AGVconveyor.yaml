@@ -1,10 +1,14 @@
-agv_name:              "agv1"
-agv_ip:                '192.168.1.210'
-# agv_start_x:           2.0
-# agv_start_y:           2.0
-agv_start_x:           8.0
-agv_start_y:           -4.0
-agv_start_angle:       0.0
+#---------- Thông số chung của AGV -------------------#
+agv_radius: 0.2              # mét
+agv_width: 0.7               # mét
+agv_length: 1.1              # mét
+safety_zone: 0.1             # mét
+min_voltage: 23.0            # volt
+max_voltage: 25.5            # volt
+
+x_start: 0.0
+y_start: 0.0
+theta_start: 0.0
 
 vel_x_max: 0.8
 vel_x_min: 0.1
@@ -33,11 +37,5 @@ need_rotaty_finish: 1
 time_downVolt: 2000           # miliseconds
 delta_voltage: 0.005         # Volts
 
-#for curve move 
-curve_deltaup: 0.04           # down_limit > 0.02
-
-#for pub path
-nb_point_path: 101
-
-#for plot 
-time_getdata: 200
+#---------- Biến hệ thống -------------------#
+rate: 50  

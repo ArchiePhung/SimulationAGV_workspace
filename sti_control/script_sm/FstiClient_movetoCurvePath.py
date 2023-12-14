@@ -105,7 +105,7 @@ class Fake_stiClient():
     def run(self):
         while not rospy.is_shutdown():
             if self.mode == 0:                                           # khi các AGV chưa chạy 
-                if time.time() - self.DieTime_pub < 1:                   # chờ 2s rồi pub lộ trình tiếp theo
+                if time.time() - self.DieTime_pub < 3:                   # chờ 2s rồi pub lộ trình tiếp theo
                     self.enable = 1
                     self.target_id = 1
                     self.target_x = 5.0
