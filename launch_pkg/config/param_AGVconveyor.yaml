@@ -6,7 +6,7 @@ safety_zone: 0.1             # mét
 min_voltage: 23.0            # volt
 max_voltage: 25.5            # volt
 
-x_start: 0.0
+x_start: 1.0
 y_start: 0.0
 theta_start: 0.0
 

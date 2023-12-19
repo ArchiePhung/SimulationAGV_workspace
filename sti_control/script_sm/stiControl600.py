@@ -1757,6 +1757,7 @@ class ros_control():
 				if self.completed_moveOut == 0:
 					self.job_doing = 2
 					if self.flag_requirOutCharge == 1:
+						print("AGV move out of charger")
 						self.navigation_query.modeMove = 3
 						self.navigation_query.GoalID = 0
 						self.navigation_query.GoalX = self.goal_moveOut.pose.position.x
@@ -2136,8 +2137,8 @@ class ros_control():
 					self.job_doing = 6
 					# - add 18/07/2023.
 					self.pub_cmdVel(Twist(), self.rate_cmdvel, rospy.get_time())
-
 					count_box = 0
+					
 					# - Xác nhận số thùng cần lấy.
 					for i in range(6):
 						self.listMission_conveyor[i] = self.getBit_fromInt16(self.mission_after, i) # -
@@ -2233,7 +2234,6 @@ class ros_control():
 								self.listMission_completed[2] = 1
 								self.control_conveyors.No1_mission = self.conveyorTask_stop
 								self.control_CPD.output8 = 0
-
 
 							if count_box <= 3: # - Lấy <= 3 Thùng hàng.
 								# - Băng tải số 21.

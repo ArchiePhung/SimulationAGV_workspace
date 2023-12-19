@@ -14,10 +14,10 @@
   <node name="stiDevice_fake" pkg="agv_simulation" type="stiDevice600_fake.py" />
 
   <!-- Điều phối chung -->
-  <node name="stiControl600" pkg="sti_control" type="stiControl600.py"/>
+  <node name="stiControl600" pkg="sti_control" type="stiControl600.py" output="screen"/>
 
   <!-- Điều khiển AGV qua các điểm di chuyển -->  
-  <node name="stiNavigation600" pkg="sti_module" type="stiNavigation600.py" output="screen"/>
+  <node name="stiNavigation600" pkg="sti_module" type="stiNavigation600.py"/>
 
   <!-- Vị trí của AGV trên Rviz -->
   <node name="agv_sim" pkg="agv_simulation" type="agv_sim.py" />

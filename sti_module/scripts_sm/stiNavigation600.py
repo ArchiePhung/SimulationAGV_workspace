@@ -237,7 +237,7 @@ class rickshaw_navigation():
 		point.header.stamp = rospy.Time.now()
 		point.pose.position.x = x
 		point.pose.position.y = y
-		point.pose.position.z = -1.0
+		point.pose.position.z = 0.0
 		point.pose.orientation.w = 1.0
 		return point
 
