@@ -1,0 +1,3 @@
+<launch>
+	<node pkg="ros_canBus" name="debugHCv2" type="debugHCv2.py" output="screen"> </node>
+</launch>

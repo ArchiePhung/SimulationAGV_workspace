@@ -1,0 +1,3 @@
+<launch>
+	<node pkg="ros_canBus" name="intermediaryHC" type="intermediaryHC.py" output="screen"> </node>
+</launch>

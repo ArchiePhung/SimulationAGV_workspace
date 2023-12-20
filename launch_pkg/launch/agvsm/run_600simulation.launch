@@ -10,6 +10,8 @@
     <remap from="robot_description" to="agv1_description" />
   </node>
 
+  <!-- robot UI -->
+  <node name="app_node" pkg="app_ros600" type="app.py" />       
   <!-- robot1 launch -->
   <node name="stiDevice_fake" pkg="agv_simulation" type="stiDevice600_fake.py" />
 

@@ -1,0 +1,5 @@
+<launch>
+	<node pkg="ros_canBus" type="convert_ROS_CAN.py" name="convert_CAN_node" output="screen"> </node>
+	<include file="$(find ros_canBus)/launch/debugHCv2.launch" />
+	<include file="$(find ros_canBus)/launch/intermediaryHC.launch" />
+</launch>
