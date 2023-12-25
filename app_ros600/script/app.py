@@ -146,6 +146,14 @@ class statusColor:
 
 		self.lbc_safetyConveyor1 = 0
 		self.lbc_safetyConveyor2 = 0
+
+		# - 
+		self.lbc_safetyConveyorPos11 = 0
+		self.lbc_safetyConveyorPos12 = 0
+		self.lbc_safetyConveyorPos13 = 0
+		self.lbc_safetyConveyorPos21 = 0
+		self.lbc_safetyConveyorPos22 = 0
+		self.lbc_safetyConveyorPos23 = 0				
 		# self. = 0
 		# self. = 0
 		# self. = 0
@@ -218,7 +226,7 @@ class valueLable:
 class WelcomeScreen(QDialog):
 	def __init__(self):
 		super(WelcomeScreen, self).__init__()
-		loadUi("/home/tiger/simulation_ws/src/app_ros/interface/app.ui", self)
+		loadUi("/home/tiger/simulation_ws/src/app_ros600/interface/app.ui", self)
 		# --
 		self.statusButton = statusButton()
 		self.statusColor  = statusColor()
@@ -378,7 +386,7 @@ class WelcomeScreen(QDialog):
 		self.modeRun_launch = 0
 		self.modeRun_byhand = 1
 		self.modeRun_auto = 2
-		self.modeRuning = self.modeRun_launch
+		self.modeRuning = self.modeRun_byhand    # Archie: = modeRun_launch
 		# --
 
 		self.password_data = ""
@@ -1224,6 +1232,36 @@ class WelcomeScreen(QDialog):
 		elif (self.statusColor.lbc_safetyConveyor2 == 0):
 			self.lbc_safetyConveyor2.setStyleSheet("background-color: white; ")
 
+		# -- Archie add 22/12/2023
+		if (self.statusColor.lbc_safetyConveyorPos11 == 1):
+			self.lbc_safetyConveyorPos11.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_safetyConveyorPos11 == 0):
+			self.lbc_safetyConveyorPos11.setStyleSheet("background-color: white; ")
+
+		if (self.statusColor.lbc_safetyConveyorPos12 == 1):
+			self.lbc_safetyConveyorPos12.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_safetyConveyorPos12 == 0):
+			self.lbc_safetyConveyorPos12.setStyleSheet("background-color: white; ")
+
+		if (self.statusColor.lbc_safetyConveyorPos13 == 1):
+			self.lbc_safetyConveyorPos13.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_safetyConveyorPos13 == 0):
+			self.lbc_safetyConveyorPos13.setStyleSheet("background-color: white; ")
+
+		if (self.statusColor.lbc_safetyConveyorPos21 == 1):
+			self.lbc_safetyConveyorPos21.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_safetyConveyorPos21 == 0):
+			self.lbc_safetyConveyorPos21.setStyleSheet("background-color: white; ")
+
+		if (self.statusColor.lbc_safetyConveyorPos22 == 1):
+			self.lbc_safetyConveyorPos22.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_safetyConveyorPos22 == 0):
+			self.lbc_safetyConveyorPos22.setStyleSheet("background-color: white; ")
+
+		if (self.statusColor.lbc_safetyConveyorPos23 == 1):
+			self.lbc_safetyConveyorPos23.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_safetyConveyorPos23 == 0):
+			self.lbc_safetyConveyorPos23.setStyleSheet("background-color: white; ")
 
 	def set_labelValue(self): # App_lbv()
 		num = self.cb_chooseConveyor.currentIndex()
@@ -1294,16 +1332,17 @@ class WelcomeScreen(QDialog):
 		# self..setText(self.valueLable.)
 		
 	def controlShow_followMode(self):
-		if (self.valueLable.modeRuning == self.modeRun_launch):
-			self.modeRuning = self.modeRun_launch
+		# if (self.valueLable.modeRuning == self.modeRun_launch):    # Archie: add // comment
+		# 	self.modeRuning = self.modeRun_launch
 
-		elif (self.valueLable.modeRuning == self.modeRun_byhand):
+		if (self.valueLable.modeRuning == self.modeRun_byhand):
 			self.modeRuning = self.modeRun_byhand
-
+    
 		elif (self.valueLable.modeRuning == self.modeRun_auto):
 			self.modeRuning = self.modeRun_auto
 		else:
 			self.modeRuning = self.modeRun_auto
+
 		# --
 		if (self.modeRuning == self.modeRun_launch): # -- Khoi Dong
 			self.fr_launch.show()
@@ -1419,8 +1458,8 @@ class Program(threading.Thread):
 		self.threadID = threadID
 		self.shutdown_flag = threading.Event()
 		# --
-		self.name_card = rospy.get_param("name_card", "wlo2")
-		self.name_card = "wlo2"
+		self.name_card = rospy.get_param("name_card", "wlp3s0")
+		self.name_card = "wlp3s0"
 
 		self.address_traffic = rospy.get_param("address_traffic", "172.21.15.224")
 		#self.address_traffic = "192.168.1.92"
@@ -1800,7 +1839,15 @@ class Program(threading.Thread):
 			496:'Vị trí 23 Đã Có Thùng', #
 			# -
 			497:'Có Dị vật tại Tầng dưới băng tải', #
-			498:'Có Dị vật tại Tầng trên băng tải' #
+			498:'Có Dị vật tại Tầng trên băng tải', #
+
+			# - add 22/12/2023
+			391:'Không phát hiện vị trí băng tải nhận 11', # 
+			392:'Không phát hiện vị trí băng tải nhận 12', #
+			393:'Không phát hiện vị trí băng tải nhận 13', # 
+			394:'Không phát hiện vị trí băng tải nhận 21', #
+			395:'Không phát hiện vị trí băng tải nhận 22', # 
+			396:'Không phát hiện vị trí băng tải nhận 23', #
 		}
 		return switcher.get(val, 'UNK')
 
@@ -1928,6 +1975,14 @@ class Program(threading.Thread):
 		self.statusColor.lbc_safetyConveyor1 = self.status_CPD.input1
 		self.statusColor.lbc_safetyConveyor2 = self.status_CPD.input2
 
+		# Archie add 22/12/2023
+		self.statusColor.lbc_safetyConveyorPos11 = self.status_CPD.input3
+		self.statusColor.lbc_safetyConveyorPos12 = self.status_CPD.input4
+		self.statusColor.lbc_safetyConveyorPos13 = self.status_CPD.input5
+		self.statusColor.lbc_safetyConveyorPos21 = self.status_CPD.input6
+		self.statusColor.lbc_safetyConveyorPos22 = self.status_CPD.input7
+		self.statusColor.lbc_safetyConveyorPos23 = self.status_CPD.input8		
+
 	def controlAll(self):
 		# -- Mode show
 		if (self.NN_infoRespond.mode == 0):   # - launch
@@ -2023,7 +2078,6 @@ class Program(threading.Thread):
 		self.valueLable.lbv_navi_type = str(self.navigation_respond.typeRun)
 		self.valueLable.lbv_debug1 = self.navigation_respond.debug1
 		self.valueLable.lbv_debug2 = self.navigation_respond.debug2
-
 
 	def readButton(self):
 		# -- Toyo

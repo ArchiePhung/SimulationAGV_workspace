@@ -13,7 +13,23 @@ Update: 17/03/2023
 Update: 19/06/2023: Lỗi khi nhận <= 3 thùng: Chưa nhận hết -> đã báo hoàn thành quá trình nhận hàng.
 Update: 05/07/2023: Thêm cảm biến an toàn cho băng tải: Phát hiện thùng hàng chưa qua hẳn.
 Update: 18/07/2023: Lõi khi AGV đang chờ lệnh mới -> Chuyển bằng tay + Lùi -> Chuyển tự đọng => AGV không dừng.
+Update: 15/08/2023: 
+	- Lõi đang trả hàng -> Chuyển manual -> Di chuyển sang vị trí khác -> Chuyển Auto -> Vẫn trả hàng -> Rơi hàng.
+	- Lỗi AGV ở xa vị trí cuối (mode = 5) nhưng vẫn bám theo điểm đó.
+Update: 28/09/2023: 
+	- Thêm cảnh báo: Lỗi lệnh Traffic khi AGV đang di chuyển vào vị trí trả thùng.
+
+Dev: Phung Quy Duong(Archie)
+Update 21/12/2023:
+	- Hardware: Lắp thêm 6 cảm biến gương phát hiện vị trí băng tải.
+	- Software: Thêm chương trình xác nhận AGV đã đến đúng vị trí băng tải thì mới cho trả hàng và ngược lại, không cho trả hàng và báo lỗi lên màn hình. 
+				Khắc phục lỗi (lỗi này phải là lỗi báo đỏ) -  Ko tín hiệu cảm biến 
+					+ Trường hợp cảm biến lỗi phần cứng thì bắt buộc không được trả hàng, và bên NCC sẽ phải lên thay.
+					+ Trường hợp AGV đi lệch thì người công nhân chỉnh lại vị trí của AGV.
+					-> 
+					
 """
+
 import roslib
 
 import sys
@@ -26,6 +42,9 @@ import rospy
 import subprocess
 import re
 import os
+
+from sti_msgs.msg import *
+
 import tf
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
 from geometry_msgs.msg import Pose, PoseStamped, Quaternion
@@ -33,7 +52,7 @@ from geometry_msgs.msg import Point
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Int16, Int8, Bool
 from message_pkg.msg import *
-from sti_msgs.msg import *
+from ros_canbus.msg import *
 from sensor_msgs.msg import Imu
 from math import sin , cos , pi , atan2, radians, sqrt, pow, degrees
 
@@ -64,8 +83,7 @@ class ros_control():
 		rospy.init_node('stiControl', anonymous=False)
 		self.rate = rospy.Rate(60)
 		# -------------- Parameter -------------- #
-
-		self.name_card = "wlp3s0"
+		self.name_card = "wlo2"
 		self.address = "172.21.16.224" # "172.21.15.224"
 
 		# -- App
@@ -158,9 +176,7 @@ class ros_control():
 		self.safety_NAV = Int8()
 
 		# -- robotPose_nav - POSE
-		# rospy.Subscriber('/robotPose_nav', PoseStamped, self.callback_getPoseRobot, queue_size = 20)
-		# self.robotPose_nav = PoseStamped()
-		rospy.Subscriber('/agv_pose', Pose, self.callback_getPoseRobot, queue_size = 100)
+		rospy.Subscriber('/robotPose_nav', PoseStamped, self.callback_getPoseRobot, queue_size = 20)
 		self.robotPose_nav = PoseStamped()
 
 		# -- Port physical
@@ -298,6 +314,14 @@ class ros_control():
 		self.saveTime_warningRack21 = rospy.get_time()
 		self.saveTime_warningRack22 = rospy.get_time()
 		self.saveTime_warningRack23 = rospy.get_time()
+
+		# - 
+		self.flagWarning_conveyorPos11 = 0
+		self.flagWarning_conveyorPos12 = 0
+		self.flagWarning_conveyorPos13 = 0
+		self.flagWarning_conveyorPos21 = 0
+		self.flagWarning_conveyorPos22 = 0
+		self.flagWarning_conveyorPos23 = 0
 		# --
 		self.pre_mess = ""               # lưu tin nhắn hiện tại.
 		# -- Status to server:
@@ -332,7 +356,7 @@ class ros_control():
 		self.led_completed = 5  	# 5	
 		self.led_stopBarrier = 6  	# 6
 		# -- Mission server
-		self.statusTask_liftError = 64 # trang thái nâng kệ nhưng ko có kệ.
+		self.statusTask_liftError = 64 # trang thái nâng kệ nhueng ko có kệ.
 		self.serverMission_liftUp = 65
 		self.serverMission_liftDown = 66
 		self.serverMission_charger = 5
@@ -492,14 +516,14 @@ class ros_control():
 		self.safety_NAV = data
 
 	def callback_getPoseRobot(self, data):
-		self.robotPose_nav.pose = data
+		self.robotPose_nav = data
 		# doi quaternion -> rad    
-		quaternion1 = (self.robotPose_nav.pose.orientation.x, self.robotPose_nav.pose.orientation.y,\
-					self.robotPose_nav.pose.orientation.z, self.robotPose_nav.pose.orientation.w)
+		quaternion1 = (data.pose.orientation.x, data.pose.orientation.y,\
+					data.pose.orientation.z, data.pose.orientation.w)
 		euler = tf.transformations.euler_from_quaternion(quaternion1)
 
-		self.Traffic_infoRespond.x = round(self.robotPose_nav.pose.position.x, 3)
-		self.Traffic_infoRespond.y = round(self.robotPose_nav.pose.position.y, 3)
+		self.Traffic_infoRespond.x = round(data.pose.position.x, 3)
+		self.Traffic_infoRespond.y = round(data.pose.position.y, 3)
 		self.Traffic_infoRespond.z = round(euler[2], 3)
 
 	def callback_port(self, data):
@@ -814,6 +838,7 @@ class ros_control():
 
 	def getBit_missionConveyor(self, byte, pos):
 		return 0
+
 	# --
 	def getBit_fromInt8(self, value_in, pos):
 		bit_out = 0
@@ -852,37 +877,37 @@ class ros_control():
 	def detectLost_driver(self):
 		delta_t = rospy.Time.now() - self.timeStampe_driver
 		if (delta_t.to_sec() > 0.6):
-			return 0                     # pre_val = 1
+			return 1
 		return 0
 
 	def detectLost_RTC(self):
 		delta_t = rospy.Time.now() - self.timeStampe_RTC
 		if delta_t.to_sec() > 0.6:
-			return 0                     # pre_val = 1
+			return 1
 		return 0
 
 	def detectLost_HC(self):
 		delta_t = rospy.Time.now() - self.timeStampe_HC
 		if delta_t.to_sec() > 0.6:
-			return 0                    # pre_val = 1
+			return 1
 		return 0
 
 	def detectLost_OC12(self):
 		delta_t = rospy.Time.now() - self.timeStampe_conveyor3
 		if delta_t.to_sec() > 4.0:
-			return 0                    # pre_val = 1
+			return 1
 		return 0
 
 	def detectLost_OC34(self):
 		delta_t = rospy.Time.now() - self.timeStampe_conveyor2
-		if delta_t.to_sec() > 4.0: 
-			return 0                    # pre_val = 1
+		if delta_t.to_sec() > 4.0:
+			return 1
 		return 0
 
 	def detectLost_OC56(self):
 		delta_t = rospy.Time.now() - self.timeStampe_conveyor1
 		if delta_t.to_sec() > 4.0:
-			return 0                    # pre_val = 1
+			return 1
 		return 0
 
 	def detectLost_Main(self):
@@ -894,25 +919,25 @@ class ros_control():
 	def detectLost_CPD(self):
 		delta_t = rospy.Time.now() - self.timeStampe_CPD
 		if delta_t.to_sec() > 4.0:
-			return 0                 # pre_val = 1
+			return 1
 		return 0
 
 	def detectLost_nav(self):
 		delta_t = rospy.Time.now() - self.nav350_data.header.stamp
 		if delta_t.to_sec() > 0.6:
-			return 0                 # pre_val = 1
+			return 1
 		return 0
 
 	def detectLost_poseRobot(self):
 		delta_t = rospy.Time.now() - self.robotPose_nav.header.stamp
 		if delta_t.to_sec() > 0.6:
-			return 0                 # pre_val = 1
+			return 1
 		return 0
 
 	def detect_blsockCollide(self):
 		delta_t = rospy.Time.now() - self.saveTime_blsockCollide
 		if delta_t.to_sec() > 0.6:
-			self.flag_blsockCollide = 0          # pre_val = 1
+			self.flag_blsockCollide = 1
 
 	def detect_EMG(self):
 		if self.main_info.EMC_status == 0:
@@ -933,11 +958,11 @@ class ros_control():
 				self.saveTime_checkServer = rospy.Time.now()
 				self.saveStatus_server = self.check_server()
 
-			# if self.saveStatus_server == 1:           # pre: ko comment 
-			# 	return 2
-			# elif self.saveStatus_server == 2:
-			# 	return 3
-			# return 1
+			if self.saveStatus_server == 1:
+				return 2
+			elif self.saveStatus_server == 2:
+				return 3
+			return 1
 		return 0
 
 	def detectLost_reflectors(self):
@@ -947,7 +972,7 @@ class ros_control():
 
 		delta_t = rospy.Time.now() - self.timeStampe_reflectors
 		if delta_t.to_sec() > 1.2:
-			return 0                # pre_val = 1
+			return 1
 		return 0
 
 	def find_stopAvoiding(self, textIn):
@@ -1076,6 +1101,10 @@ class ros_control():
 			if self.find_stopAvoiding(self.server_cmdRequest.command) == 1:
 				listError_now.append(442)
 
+		# -- Cảnh báo: Lỗi lệnh Traffic. update: 28/09/2023.
+		if self.navigation_respond.error == -5 and self.navigation_respond.modeMove == 5:
+			listError_now.append(443)
+
 		# -- Cảnh báo: Không sạc được Pin.
 		if self.flag_notCharger == 1:
 			listError_now.append(452)
@@ -1151,6 +1180,26 @@ class ros_control():
 		if self.status_CPD.input2 == 1 and self.job_doing != 6:
 			listError_now.append(498)
 
+		# - flag show robot not detect conveyor position
+		# - Roller Conveyor 11
+		if self.flagWarning_conveyorPos11 == 1:
+			listError_now.append(391)
+		# - Roler Conveyor 12
+		if self.flagWarning_conveyorPos12 == 1:
+			listError_now.append(392)
+		# - Roller Conveyor 13
+		if self.flagWarning_conveyorPos13 == 1:
+			listError_now.append(393)
+		# - Roller Conveyor 21
+		if self.flagWarning_conveyorPos21 == 1:
+			listError_now.append(394)
+		# - Roller Conveyor 22
+		if self.flagWarning_conveyorPos22 == 1:
+			listError_now.append(395)
+		# - Roller Conveyor 23
+		if self.flagWarning_conveyorPos23 == 1:
+			listError_now.append(396)		
+
 		return listError_now
 
 	def resetAll_variable(self):
@@ -1199,6 +1248,13 @@ class ros_control():
 		self.flagWarning_receivedRack21 = 0
 		self.flagWarning_receivedRack22 = 0
 		self.flagWarning_receivedRack23 = 0
+		# - Archie: add 22/12/2023
+		self.flagWarning_conveyorPos11 = 0
+		self.flagWarning_conveyorPos12 = 0
+		self.flagWarning_conveyorPos13 = 0
+		self.flagWarning_conveyorPos21 = 0
+		self.flagWarning_conveyorPos22 = 0
+		self.flagWarning_conveyorPos23 = 0
 		# -
 		self.listMission_completed = [0, 0, 0, 0, 0, 0]
 		# -- add 17/03/2023
@@ -1293,10 +1349,10 @@ class ros_control():
 
 			elif count_error == 0 and count_warning > 0:
 				self.flag_error = 0
-				self.flag_warning = 0          # Archie: 1
+				self.flag_warning = 1
 
 			else:
-				self.flag_error = 0            # Archie: 1
+				self.flag_error = 1
 				self.flag_warning = 0
 
 			# -- 
@@ -1362,6 +1418,14 @@ class ros_control():
 				self.flagWarning_receivedRack22 = 0
 				self.flagWarning_receivedRack23 = 0
 
+				# -
+				self.flagWarning_conveyorPos11 = 0
+				self.flagWarning_conveyorPos12 = 0
+				self.flagWarning_conveyorPos13 = 0
+				self.flagWarning_conveyorPos21 = 0
+				self.flagWarning_conveyorPos22 = 0
+				self.flagWarning_conveyorPos23 = 0
+
 			else:
 				self.task_driver.data = self.taskDriver_Read
 				self.EMC_reset = self.EMC_resetOff	
@@ -1371,12 +1435,11 @@ class ros_control():
 				self.enable_parking = 0
 				self.enable_mission = 0
 
-				self.mode_operate = self.md_by_hand               
+				self.mode_operate = self.md_by_hand
 				self.control_conveyors = Control_conveyors()
 
 				self.led_effect = 0
 				self.speaker_requir = self.spk_warn
-
 				# -
 				self.flag_error = 0
 				self.error_device = 0
@@ -1686,7 +1749,7 @@ class ros_control():
 						self.process = 42
 						self.job_doing = 8
 					else:
-						self.resetAll_variable()                      # Archie: if AGV not in special case, update new request for AGV
+						self.resetAll_variable()
 						print ("--- ResetAll Variable ---")
 						self.process = 42
 					# --
@@ -1698,7 +1761,7 @@ class ros_control():
 							self.log_mess("info", "After mission change to ", self.server_cmdRequest.after_mission)
 							self.mission_after = self.server_cmdRequest.after_mission
 							# -
-							self.completed_after_mission = 0 
+							self.completed_after_mission = 0
 							self.completed_after_mission1 = 0
 							self.completed_moveSpecial = 0
 							self.completed_checkRack = 0
@@ -1716,6 +1779,13 @@ class ros_control():
 							self.flagWarning_receivedRack21 = 0
 							self.flagWarning_receivedRack22 = 0
 							self.flagWarning_receivedRack23 = 0
+							# - Archie add 22/12/2023
+							self.flagWarning_conveyorPos11 = 0
+							self.flagWarning_conveyorPos12 = 0
+							self.flagWarning_conveyorPos13 = 0
+							self.flagWarning_conveyorPos21 = 0
+							self.flagWarning_conveyorPos22 = 0
+							self.flagWarning_conveyorPos23 = 0							
 							# -
 							self.listMission_completed = [0, 0, 0, 0, 0, 0]
 							
@@ -1725,8 +1795,33 @@ class ros_control():
 				if self.flag_Byhand_to_Auto == 1:
 					# - add 18/07/2023.
 					self.pub_cmdVel(Twist(), self.rate_cmdvel, rospy.get_time())
+					self.pub_cmdVel(Twist(), self.rate_cmdvel, rospy.get_time())
 					
-					# -- add 12/11/2021 : Chay lai quy trinh Vao Sac khi Chuuyen che do.              
+					# -- add 15/08/2023 - Kiểm tra vị trí có bị thay đổi không.
+					if self.completed_moveSimple == 1 and self.completed_moveSpecial == 1:
+						if self.completed_after_mission1 == 0 or self.completed_after_mission == 0:
+							point1 = Point(self.Traffic_infoRespond.x, self.Traffic_infoRespond.y, 0)
+							point2 = Point(self.navigation_query.GoalX, self.navigation_query.GoalY, 0)
+							err_distance = self.calculate_distance(point1, point2)
+							err_angle = self.Traffic_infoRespond.z - self.navigation_query.GoalAngle
+							err_angle = self.limitAngle(err_angle)
+							# -
+							if (err_distance > 0.03) or (abs(err_angle) > radians(8)):
+								self.completed_moveSimple = 0
+								self.completed_moveSpecial = 0
+								self.completed_checkRack = 0
+								self.completed_after_mission1 = 0
+								self.completed_after_mission = 0
+
+					# -- add 15/08/2023 - Kiểm tra vị trí mode = 5 đang chạy -> reset.
+					if self.completed_moveSimple == 1 and self.completed_moveSpecial == 0:
+						point11 = Point(self.Traffic_infoRespond.x, self.Traffic_infoRespond.y, 0)
+						point12 = Point(self.serverCmd_now.target_x, self.serverCmd_now.target_y, 0)
+						err_distance1 = self.calculate_distance(point11, point12)
+						if err_distance1 > 2.0:
+							self.completed_moveSimple = 0
+
+					# -- add 12/11/2021 : Chay lai quy trinh Vao Sac khi Chuuyen che do.
 					if self.completed_after_mission == 1 and self.mission_after == 10:
 						delta_distance = self.calculate_distance(self.robotPose_nav.pose.position, self.poseCharger.position)
 						if delta_distance > self.distance_resetMission:
@@ -1758,7 +1853,6 @@ class ros_control():
 				if self.completed_moveOut == 0:
 					self.job_doing = 2
 					if self.flag_requirOutCharge == 1:
-						print("AGV move out of charger")
 						self.navigation_query.modeMove = 3
 						self.navigation_query.GoalID = 0
 						self.navigation_query.GoalX = self.goal_moveOut.pose.position.x
@@ -1827,6 +1921,8 @@ class ros_control():
 				else:
 					self.process = 46
 
+			# Archie: add scripts check conveyor position in processing machine before returning ingredients
+			# update: 22/12/2023 - 2013th line 
 			elif self.process == 46: # - Thực hiện di chuyển: 1, Đi đến đích Nhận/Trả rack | 2, Đi vào sạc.
 				if self.completed_moveSpecial == 0:
 					self.job_doing = 4
@@ -1903,11 +1999,6 @@ class ros_control():
 									self.enable_moving = 0
 
 								self.navigation_query.modeMove = 5
-								# -
-								# self.navigation_query.GoalID = self.serverCmd_now.target_id
-								# self.navigation_query.GoalX  = self.serverCmd_now.target_x
-								# self.navigation_query.GoalY  = self.serverCmd_now.target_y
-								# self.navigation_query.GoalAngle = self.serverCmd_now.target_z
 								# --
 								self.serverCmd_now = self.server_cmdRequest
 								# -
@@ -1924,9 +2015,22 @@ class ros_control():
 								self.navigation_query.listAngleLine  = self.serverCmd_now.list_angleLine
 								self.navigation_query.listRoadWidth  = self.serverCmd_now.list_roadWidth
 								self.navigation_query.listAngleFinal = self.serverCmd_now.list_angleFinal
-								# - 
+								# - Archie: AGV went to Working point 
 								if self.navigation_respond.modeMove == 5 and self.navigation_respond.completed == 1:
-									self.completed_moveSpecial = 1
+									if self.mission_after == 3:   # conveyor 1-3
+										if self.status_CPD.input5 == 1:  
+											self.completed_moveSpecial = 1
+										else:
+											self.completed_moveSpecial = 0
+											self.flagWarning_conveyorPos13 = 1
+
+									elif self.mission_after == 5: # conveyor 2-2
+										if self.status_CPD.input7 == 1:
+											self.completed_moveSpecial = 1
+										else:
+											self.completed_moveSpecial = 0
+											self.flagWarning_conveyorPos22 = 1
+
 									self.enable_moving = 0
 
 							elif self.mission_after == 2 or self.mission_after == 4: # - Tiến lên 1 nấc.
@@ -1942,11 +2046,9 @@ class ros_control():
 								angle_2 = self.serverCmd_now.target_z + pi
 								angle_2 = self.limitAngle(angle_2)
 								# -
-								self.goalTarget.id = self.serverCmd_now.target_id
-								# -
 								self.goalTarget.pose = self.getPose_from_offset(self.serverCmd_now.target_x, self.serverCmd_now.target_y, angle_2, self.serverCmd_now.offset)
 								# - 
-								self.navigation_query.GoalID = self.goalTarget.id
+								self.navigation_query.GoalID = self.serverCmd_now.target_id
 								self.navigation_query.GoalX  = self.goalTarget.pose.position.x
 								self.navigation_query.GoalY  = self.goalTarget.pose.position.y
 								self.navigation_query.GoalAngle = self.serverCmd_now.target_z
@@ -1961,7 +2063,20 @@ class ros_control():
 								self.navigation_query.listAngleFinal = self.serverCmd_now.list_angleFinal
 								# - 
 								if self.navigation_respond.modeMove == 5 and self.navigation_respond.completed == 1:
-									self.completed_moveSpecial = 1
+									if self.mission_after == 2:   # conveyor 1-2
+										if self.status_CPD.input4 == 1:
+											self.completed_moveSpecial = 1
+										else:
+											self.completed_moveSpecial = 0
+											self.flagWarning_conveyorPos12 = 1
+
+									elif self.mission_after == 4: # conveyor 2-1
+										if self.status_CPD.input6 == 1:
+											self.completed_moveSpecial = 1
+										else:
+											self.completed_moveSpecial = 0
+											self.flagWarning_conveyorPos21 = 1
+
 									self.enable_moving = 0
 
 							elif self.mission_after == 6: # - Lùi lại 1 nấc.
@@ -1974,16 +2089,14 @@ class ros_control():
 								# -
 								self.serverCmd_now = self.server_cmdRequest
 								# -
-								self.goalTarget.id = self.serverCmd_now.target_id
 								# angle_2 = self.serverCmd_now.target_z
 								# angle_2 = self.limitAngle(angle_2)
 								self.goalTarget.pose = self.getPose_from_offset(self.serverCmd_now.target_x, self.serverCmd_now.target_y, self.serverCmd_now.target_z, self.serverCmd_now.offset)
-								self.goalTarget.angleFinal = self.serverCmd_now.target_z
 								# - 
-								self.navigation_query.GoalID = self.goalTarget.id
+								self.navigation_query.GoalID = self.serverCmd_now.target_id
 								self.navigation_query.GoalX  = self.goalTarget.pose.position.x
 								self.navigation_query.GoalY  = self.goalTarget.pose.position.y
-								self.navigation_query.GoalAngle = self.goalTarget.angleFinal
+								self.navigation_query.GoalAngle = self.serverCmd_now.target_z
 								# --
 								self.navigation_query.listID = self.serverCmd_now.list_id
 								self.navigation_query.listX  = self.serverCmd_now.list_x
@@ -1995,7 +2108,12 @@ class ros_control():
 								self.navigation_query.listAngleFinal = self.serverCmd_now.list_angleFinal
 								# - 
 								if self.navigation_respond.modeMove == 5 and self.navigation_respond.completed == 1:
-									self.completed_moveSpecial = 1
+									if self.status_CPD.input8 == 1:     # conveyor 2-3
+										self.completed_moveSpecial = 1
+									else:
+										self.completed_moveSpecial = 0
+										self.flagWarning_conveyorPos23 = 1
+
 									self.enable_moving = 0
 
 							elif self.mission_after == 1: # - Tiến lên 2 nấc.
@@ -2010,14 +2128,12 @@ class ros_control():
 								# -
 								angle_2 = self.serverCmd_now.target_z + pi
 								angle_2 = self.limitAngle(angle_2)
-								self.goalTarget.id = self.serverCmd_now.target_id
 								self.goalTarget.pose = self.getPose_from_offset(self.serverCmd_now.target_x, self.serverCmd_now.target_y, angle_2, self.serverCmd_now.offset*2)
-								self.goalTarget.angleFinal = self.serverCmd_now.target_z
 								# - 
-								self.navigation_query.GoalID = self.goalTarget.id
+								self.navigation_query.GoalID = self.serverCmd_now.target_id
 								self.navigation_query.GoalX  = self.goalTarget.pose.position.x
 								self.navigation_query.GoalY  = self.goalTarget.pose.position.y
-								self.navigation_query.GoalAngle = self.goalTarget.angleFinal
+								self.navigation_query.GoalAngle = self.serverCmd_now.target_z
 								# --
 								self.navigation_query.listID = self.serverCmd_now.list_id
 								self.navigation_query.listX  = self.serverCmd_now.list_x
@@ -2029,13 +2145,18 @@ class ros_control():
 								self.navigation_query.listAngleFinal = self.serverCmd_now.list_angleFinal
 								# - 
 								if self.navigation_respond.modeMove == 5 and self.navigation_respond.completed == 1:
-									print ("I here! - 1")
-									self.completed_moveSpecial = 1
+									if self.status_CPD.input3 == 1:     # conveyor 1-1
+										self.completed_moveSpecial = 1
+									else:
+										self.completed_moveSpecial = 0
+										self.flagWarning_conveyorPos11 = 1
+
 									self.enable_moving = 0
-							else:
-								self.completed_moveSpecial = 1
-								self.enable_moving = 0
-								print ("M S ---")
+							
+							# Archie: comment 22/12/2023
+							# else:
+							# 	self.completed_moveSpecial = 1
+							# 	self.enable_moving = 0
 
 					self.process = 2
 				else:
@@ -2138,8 +2259,8 @@ class ros_control():
 					self.job_doing = 6
 					# - add 18/07/2023.
 					self.pub_cmdVel(Twist(), self.rate_cmdvel, rospy.get_time())
+
 					count_box = 0
-					
 					# - Xác nhận số thùng cần lấy.
 					for i in range(6):
 						self.listMission_conveyor[i] = self.getBit_fromInt16(self.mission_after, i) # -
@@ -2163,7 +2284,7 @@ class ros_control():
 						self.flagWarning_receivedRack21 = 0
 						self.flagWarning_receivedRack22 = 0
 						self.flagWarning_receivedRack23 = 0
-						
+
 					elif self.mission_after == 10 and self.mission_before == 66: # - Nhiệm vụ sạc.
 						self.completed_after_mission1 = 1
 						print ("-------- Charger ----------")
@@ -2235,6 +2356,7 @@ class ros_control():
 								self.listMission_completed[2] = 1
 								self.control_conveyors.No1_mission = self.conveyorTask_stop
 								self.control_CPD.output8 = 0
+
 
 							if count_box <= 3: # - Lấy <= 3 Thùng hàng.
 								# - Băng tải số 21.

@@ -90,9 +90,9 @@ void CPD_controller::readInput()
   arrBits[3] = digitalRead(ONBOARD_INPUT4);
   // arrBits[4] = getBit_from2Byte(PCF_INPUT5, bitPCF);
   // arrBits[5] = getBit_from2Byte(PCF_INPUT6, bitPCF);
-  // arrBits[6] = getBit_from2Byte(PCF_INPUT7,  bitPCF);
-  // arrBits[7] = getBit_from2Byte(PCF_INPUT8,  bitPCF);
-  // arrBits[8] = getBit_from2Byte(PCF_INPUT9,  bitPCF);
+  // arrBits[6] = getBit_from2Byte(PCF_INPUT7, bitPCF);
+  // arrBits[7] = getBit_from2Byte(PCF_INPUT8, bitPCF);
+  // arrBits[8] = getBit_from2Byte(PCF_INPUT9, bitPCF);
   // arrBits[9] = getBit_from2Byte(PCF_INPUT10, bitPCF);
   // arrBits[10] = getBit_from2Byte(PCF_INPUT11, bitPCF);
   // arrBits[11] = getBit_from2Byte(PCF_INPUT12, bitPCF);

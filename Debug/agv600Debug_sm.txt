@@ -1,0 +1,10 @@
+1. When launch all node, raise an error
+[ERROR] [1703300250.174186]: bad callback: <bound method ros_control.callback_getPoseRobot of <__main__.ros_control object at 0x7f01e692df70>>
+Traceback (most recent call last):
+  File "/opt/ros/noetic/lib/python3/dist-packages/rospy/topics.py", line 750, in _invoke_callback
+    cb(msg)
+  File "/home/tiger/simulation_ws/src/sti_control/script_sm/stiControl600.py", line 501, in callback_getPoseRobot
+    self.Traffic_infoRespond.x = round(self.robotPose_nav.pose.position.x, 3)
+AttributeError: 'ros_control' object has no attribute 'Traffic_infoRespond'
+
+

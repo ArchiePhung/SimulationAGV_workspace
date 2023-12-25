@@ -43,7 +43,7 @@ class CAN_ROS():
 		self.status_conveyor13 = Status_conveyor()
 
 		self.pub_statusConveyor2 = rospy.Publisher("/status_conveyor23", Status_conveyor, queue_size= 40)
-		self.status_conveyor21 = Status_conveyor()
+		self.status_conveyor23 = Status_conveyor()
 
 		self.pub_statusConveyor3 = rospy.Publisher("/status_conveyor12", Status_conveyor, queue_size= 40)
 		self.status_conveyor12 = Status_conveyor()

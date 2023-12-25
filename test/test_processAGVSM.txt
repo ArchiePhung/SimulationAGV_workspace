@@ -118,3 +118,25 @@ before_mission: 66
 after_mission: 10
 id_command: 0
 command: "Ve sac\r\n Duoc phep di chuyen"
+
+NN cmd request| December/15|19:30:19
+
+rostopic pub /server_cmdRequest message_pkg/Server_cmdRequest "process: 0.0
+target_id: 1
+target_x: 0.0
+target_y: 0.0
+target_z: 0.0
+tag: 2
+offset: 1.0
+list_id: [1, 0, 0, 0, 0]
+list_x: [0.0, 0.0, 0.0, 0.0, 0.0]
+list_y: [0.0, 0.0, 0.0, 0.0, 0.0]
+list_speed: [0.0, 0.0, 0.0, 0.0, 0.0]
+list_directionTravel: [1.0, 0.0, 0.0, 0.0, 0.0]
+list_angleLine: [5.0, 0.0, 0.0, 0.0, 0.0]
+list_roadWidth: [0.0, 0.0, 0.0, 0.0, 0.0]
+list_angleFinal: [5.0, 5.0, 5.0, 5.0, 5.0]
+before_mission: 66
+after_mission: 10
+id_command: 0
+command: """

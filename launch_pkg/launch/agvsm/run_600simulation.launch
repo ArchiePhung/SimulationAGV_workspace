@@ -13,7 +13,7 @@
   <!-- robot UI -->
   <node name="app_node" pkg="app_ros600" type="app.py" />       
   <!-- robot1 launch -->
-  <node name="stiDevice_fake" pkg="agv_simulation" type="stiDevice600_fake.py" />
+  <!-- <node name="stiDevice_fake" pkg="agv_simulation" type="stiDevice600_fake.py" /> -->
 
   <!-- Điều phối chung -->
   <node name="stiControl600" pkg="sti_control" type="stiControl600.py" output="screen"/>
