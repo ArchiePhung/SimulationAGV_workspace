@@ -83,7 +83,7 @@ class ros_control():
 		rospy.init_node('stiControl', anonymous=False)
 		self.rate = rospy.Rate(60)
 		# -------------- Parameter -------------- #
-		self.name_card = "wlo2"
+		self.name_card = "wlp3s0"
 		self.address = "172.21.16.224" # "172.21.15.224"
 
 		# -- App
@@ -162,6 +162,8 @@ class ros_control():
 		rospy.Subscriber("/CPD_read", CPD_read, self.callback_CPD, queue_size = 10) # 
 		self.status_CPD = CPD_read()
 		self.timeStampe_CPD = rospy.Time.now()
+		
+		rospy.Subscriber("/signal_conveyorToyo", Signal_ConveyorToyo, self.callback_signalConveyorToyo, queue_size = 10)
 		# -
 		self.pub_controlCPD = rospy.Publisher("/CPD_write", CPD_write, queue_size= 20)	# Dieu khien Toyo.
 		self.control_CPD = CPD_write()
@@ -286,6 +288,7 @@ class ros_control():
 		self.completed_checkConveyors_before = 0 	# kiem tra ke co hay ko sau khi nang. 
 		self.completed_checkConveyors_after = 0 	# kiem tra ke co hay ko sau khi nang. 
 		self.completed_checkRack = 0
+		self.completed_checkConveyorPos = 0   # Archie: Kiểm tra vị trí băng tải
 		# -- Flag
 		self.flag_afterChager = 0
 		self.flag_Byhand_to_Auto = 0
@@ -508,6 +511,14 @@ class ros_control():
 	def callback_CPD(self, data):
 		self.status_CPD = data
 		self.timeStampe_CPD = rospy.Time.now()
+
+	def callback_signalConveyorToyo(self, data):
+		self.status_CPD.input3 = data.signal_toyoBit1
+		self.status_CPD.input4 = data.signal_toyoBit2
+		self.status_CPD.input5 = data.signal_toyoBit3
+		self.status_CPD.input6 = data.signal_toyoBit4
+		self.status_CPD.input7 = data.signal_toyoBit5_connected
+		self.status_CPD.input8 = data.signal_toyoBit6_done
 
 	def callback_nav350(self, data):
 		self.nav350_data = data
@@ -1215,6 +1226,7 @@ class ros_control():
 		self.completed_moveOut = 0
 		self.completed_checkConveyors = 0
 		self.completed_checkRack = 0
+		self.completed_checkConveyorPos = 0        # Archie add 22/12/2023
 		# -
 		self.mission = 0
 		self.flag_listPoint_ok = 0
@@ -1349,10 +1361,10 @@ class ros_control():
 
 			elif count_error == 0 and count_warning > 0:
 				self.flag_error = 0
-				self.flag_warning = 1
+				self.flag_warning = 0               # Archie: 1
 
 			else:
-				self.flag_error = 1
+				self.flag_error = 0                 # Archie: 0
 				self.flag_warning = 0
 
 			# -- 
@@ -1765,6 +1777,7 @@ class ros_control():
 							self.completed_after_mission1 = 0
 							self.completed_moveSpecial = 0
 							self.completed_checkRack = 0
+							self.completed_checkConveyorPos = 0            # Archie add 22/12/2023
 							# -
 							self.flagWarning_rack11 = 0
 							self.flagWarning_rack12 = 0
@@ -1798,7 +1811,8 @@ class ros_control():
 					self.pub_cmdVel(Twist(), self.rate_cmdvel, rospy.get_time())
 					
 					# -- add 15/08/2023 - Kiểm tra vị trí có bị thay đổi không.
-					if self.completed_moveSimple == 1 and self.completed_moveSpecial == 1:
+					# if self.completed_moveSimple == 1 and self.completed_moveSpecial == 1:
+					if self.completed_checkConveyorPos == 1 and self.completed_moveSpecial == 1:          # Archie add 22/12/2023
 						if self.completed_after_mission1 == 0 or self.completed_after_mission == 0:
 							point1 = Point(self.Traffic_infoRespond.x, self.Traffic_infoRespond.y, 0)
 							point2 = Point(self.navigation_query.GoalX, self.navigation_query.GoalY, 0)
@@ -1812,6 +1826,7 @@ class ros_control():
 								self.completed_checkRack = 0
 								self.completed_after_mission1 = 0
 								self.completed_after_mission = 0
+								self.completed_checkConveyorPos = 0                 # Archie add 22/12/2023
 
 					# -- add 15/08/2023 - Kiểm tra vị trí mode = 5 đang chạy -> reset.
 					if self.completed_moveSimple == 1 and self.completed_moveSpecial == 0:
@@ -1921,8 +1936,6 @@ class ros_control():
 				else:
 					self.process = 46
 
-			# Archie: add scripts check conveyor position in processing machine before returning ingredients
-			# update: 22/12/2023 - 2013th line 
 			elif self.process == 46: # - Thực hiện di chuyển: 1, Đi đến đích Nhận/Trả rack | 2, Đi vào sạc.
 				if self.completed_moveSpecial == 0:
 					self.job_doing = 4
@@ -2017,20 +2030,20 @@ class ros_control():
 								self.navigation_query.listAngleFinal = self.serverCmd_now.list_angleFinal
 								# - Archie: AGV went to Working point 
 								if self.navigation_respond.modeMove == 5 and self.navigation_respond.completed == 1:
-									if self.mission_after == 3:   # conveyor 1-3
-										if self.status_CPD.input5 == 1:  
-											self.completed_moveSpecial = 1
-										else:
-											self.completed_moveSpecial = 0
-											self.flagWarning_conveyorPos13 = 1
+									# if self.mission_after == 3:   # conveyor 1-3
+									# 	if self.status_CPD.input5 == 1:  
+									# 		self.completed_moveSpecial = 1
+									# 	else:
+									# 		self.completed_moveSpecial = 0
+									# 		self.flagWarning_conveyorPos13 = 1
 
-									elif self.mission_after == 5: # conveyor 2-2
-										if self.status_CPD.input7 == 1:
-											self.completed_moveSpecial = 1
-										else:
-											self.completed_moveSpecial = 0
-											self.flagWarning_conveyorPos22 = 1
-
+									# elif self.mission_after == 5: # conveyor 2-2
+									# 	if self.status_CPD.input7 == 1:
+									# 		self.completed_moveSpecial = 1
+									# 	else:
+									# 		self.completed_moveSpecial = 0
+									# 		self.flagWarning_conveyorPos22 = 1
+									self.completed_moveSpecial = 1
 									self.enable_moving = 0
 
 							elif self.mission_after == 2 or self.mission_after == 4: # - Tiến lên 1 nấc.
@@ -2063,20 +2076,20 @@ class ros_control():
 								self.navigation_query.listAngleFinal = self.serverCmd_now.list_angleFinal
 								# - 
 								if self.navigation_respond.modeMove == 5 and self.navigation_respond.completed == 1:
-									if self.mission_after == 2:   # conveyor 1-2
-										if self.status_CPD.input4 == 1:
-											self.completed_moveSpecial = 1
-										else:
-											self.completed_moveSpecial = 0
-											self.flagWarning_conveyorPos12 = 1
+									# if self.mission_after == 2:   # conveyor 1-2
+									# 	if self.status_CPD.input4 == 1:
+									# 		self.completed_moveSpecial = 1
+									# 	else:
+									# 		self.completed_moveSpecial = 0
+									# 		self.flagWarning_conveyorPos12 = 1
 
-									elif self.mission_after == 4: # conveyor 2-1
-										if self.status_CPD.input6 == 1:
-											self.completed_moveSpecial = 1
-										else:
-											self.completed_moveSpecial = 0
-											self.flagWarning_conveyorPos21 = 1
-
+									# elif self.mission_after == 4: # conveyor 2-1
+									# 	if self.status_CPD.input6 == 1:
+									# 		self.completed_moveSpecial = 1
+									# 	else:
+									# 		self.completed_moveSpecial = 0
+									# 		self.flagWarning_conveyorPos21 = 1
+									self.completed_moveSpecial = 1
 									self.enable_moving = 0
 
 							elif self.mission_after == 6: # - Lùi lại 1 nấc.
@@ -2108,12 +2121,12 @@ class ros_control():
 								self.navigation_query.listAngleFinal = self.serverCmd_now.list_angleFinal
 								# - 
 								if self.navigation_respond.modeMove == 5 and self.navigation_respond.completed == 1:
-									if self.status_CPD.input8 == 1:     # conveyor 2-3
-										self.completed_moveSpecial = 1
-									else:
-										self.completed_moveSpecial = 0
-										self.flagWarning_conveyorPos23 = 1
-
+									# if self.status_CPD.input8 == 1:     # conveyor 2-3
+									# 	self.completed_moveSpecial = 1
+									# else:
+									# 	self.completed_moveSpecial = 0
+									# 	self.flagWarning_conveyorPos23 = 1
+									self.completed_moveSpecial = 1
 									self.enable_moving = 0
 
 							elif self.mission_after == 1: # - Tiến lên 2 nấc.
@@ -2145,24 +2158,79 @@ class ros_control():
 								self.navigation_query.listAngleFinal = self.serverCmd_now.list_angleFinal
 								# - 
 								if self.navigation_respond.modeMove == 5 and self.navigation_respond.completed == 1:
-									if self.status_CPD.input3 == 1:     # conveyor 1-1
-										self.completed_moveSpecial = 1
-									else:
-										self.completed_moveSpecial = 0
-										self.flagWarning_conveyorPos11 = 1
-
+									# if self.status_CPD.input3 == 1:     # conveyor 1-1
+									# 	self.completed_moveSpecial = 1
+									# else:
+									# 	self.completed_moveSpecial = 0
+									# 	self.flagWarning_conveyorPos11 = 1
+									self.completed_moveSpecial = 1
 									self.enable_moving = 0
 							
-							# Archie: comment 22/12/2023
-							# else:
-							# 	self.completed_moveSpecial = 1
-							# 	self.enable_moving = 0
+							else:
+								self.completed_moveSpecial = 1
+								self.enable_moving = 0
 
 					self.process = 2
 				else:
 					self.process = 47
 
-			elif self.process == 47: # - Thực hiện nhiệm vụ sau: Kiểm tra băng tải.
+			# Archie: add scripts check conveyor position in processing machine before returning ingredients
+			# update: 22/12/2023 - 2013th line 
+			elif self.process == 47: # - Thuc hien nhiem vụ sau: Kiểm tra vị trí băng tải
+				if self.completed_checkConveyorPos == 0:
+					self.job_doing = 10
+					self.pub_cmdVel(Twist(), self.rate_cmdvel, rospy.get_time())
+
+					if self.mission_before == 1:
+						if self.mission_after == 1:
+							if self.status_CPD.input3 == 1:     # conveyor 1-1
+								self.completed_checkConveyorPos = 1
+							else:
+								self.completed_checkConveyorPos = 0
+								self.flagWarning_conveyorPos11 = 1
+
+						elif self.mission_after == 2:
+							if self.status_CPD.input4 == 1:     # conveyor 1-2
+								self.completed_checkConveyorPos = 1
+							else:
+								self.completed_checkConveyorPos = 0
+								self.flagWarning_conveyorPos12 = 1	
+
+						elif self.mission_after == 3:
+							if self.status_CPD.input5 == 1:     # conveyor 1-3
+								self.completed_checkConveyorPos = 1
+							else:
+								self.completed_checkConveyorPos = 0
+								self.flagWarning_conveyorPos13 = 1
+
+						elif self.mission_after == 4:
+							if self.status_CPD.input6 == 1:     # conveyor 2-1
+								self.completed_checkConveyorPos = 1
+							else:
+								self.completed_checkConveyorPos = 0
+								self.flagWarning_conveyorPos21 = 1
+
+						elif self.mission_after == 5:
+							if self.status_CPD.input7 == 1:     # conveyor 2-2
+								self.completed_checkConveyorPos = 1
+							else:
+								self.completed_checkConveyorPos = 0
+								self.flagWarning_conveyorPos22 = 1
+
+						elif self.mission_after == 6:
+							if self.status_CPD.input8 == 1:     # conveyor 2-3
+								self.completed_checkConveyorPos = 1
+							else:
+								self.completed_checkConveyorPos = 0
+								self.flagWarning_conveyorPos23 = 1
+					else:
+						self.completed_checkConveyorPos = 1
+
+					self.process = 2
+				else:
+					self.process = 48
+
+			elif self.process == 48: # - Thực hiện nhiệm vụ sau: Kiểm tra thùng hàng trên băng tải
 				if self.completed_checkRack == 0:
 					self.job_doing = 5
 					# - add 18/07/2023.
@@ -2252,9 +2320,9 @@ class ros_control():
 
 					self.process = 2
 				else:
-					self.process = 48
+					self.process = 49
 
-			elif self.process == 48: # - Thực hiện nhiệm vụ sau: Thao tác nhận/trả hàng Tầng 1.
+			elif self.process == 49: # - Thực hiện nhiệm vụ sau: Thao tác nhận/trả hàng Tầng 1.
 				if self.completed_after_mission1 == 0: # - Chưa thực hiện.
 					self.job_doing = 6
 					# - add 18/07/2023.
@@ -2457,9 +2525,9 @@ class ros_control():
 
 						self.process = 2
 				else:
-					self.process = 49
+					self.process = 50
 
-			elif self.process == 49: # - Thực hiện nhiệm vụ sau: Thao tác nhận/trả hàng Tầng 2.
+			elif self.process == 50: # - Thực hiện nhiệm vụ sau: Thao tác nhận/trả hàng Tầng 2.
 				if self.completed_after_mission == 0: # - Chưa thực hiện.
 					self.job_doing = 6
 					# - add 18/07/2023.
@@ -2740,6 +2808,7 @@ class ros_control():
 				# ---------------- Request Navigation ---------------- #
 				if self.enable_moving == 0:
 					self.navigation_query.modeMove = 0
+
 				self.pub_navigationQuery.publish(self.navigation_query)
 
 				# ---------------- Brake ---------------- #

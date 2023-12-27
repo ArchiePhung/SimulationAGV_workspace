@@ -920,7 +920,7 @@ Giải pháp  kỹ thuật Công nghiệp Việt Nam</string>
       <string>Bit5(Connected)</string>
      </property>
     </widget>
-    <widget class="QPushButton" name="pb_cvotoyo1_ready">
+    <widget class="QPushButton" name="pb_cvotoyo7_ready">
      <property name="geometry">
       <rect>
        <x>0</x>
@@ -933,7 +933,7 @@ Giải pháp  kỹ thuật Công nghiệp Việt Nam</string>
       <string>Bit7(Ready)</string>
      </property>
     </widget>
-    <widget class="QPushButton" name="pb_cvotoyo1_error">
+    <widget class="QPushButton" name="pb_cvotoyo8_error">
      <property name="geometry">
       <rect>
        <x>0</x>

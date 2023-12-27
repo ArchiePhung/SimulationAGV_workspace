@@ -144,6 +144,7 @@ class ros_control():
 		rospy.Subscriber("/CPD_read", CPD_read, self.callback_CPD, queue_size = 10) # 
 		self.status_CPD = CPD_read()
 		self.timeStampe_CPD = rospy.Time.now()
+
 		# -
 		self.pub_controlCPD = rospy.Publisher("/CPD_write", CPD_write, queue_size= 20)	# Dieu khien Toyo.
 		self.control_CPD = CPD_write()

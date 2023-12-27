@@ -53,6 +53,10 @@ add_message_files(
   
   Navigation_query.msg
   Navigation_respond.msg
+
+  Signal_AGVToyo.msg
+  Signal_ConveyorAGV.msg
+  Signal_ConveyorToyo.msg
   
 )
 

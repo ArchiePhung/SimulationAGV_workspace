@@ -28,3 +28,7 @@ PUB lộ trình: test_AGVconveyor.txt
    - sti_control/scripts_fixerror/stiControl_agv600_21122023.py
    - app_ros600/script/app.py
    - app_ros600/interface/app.ui
+
+==> Test algorithm
+
+12. Run part code of AGV Conveyor in SHIV12(stiControl and stiNavigation)
