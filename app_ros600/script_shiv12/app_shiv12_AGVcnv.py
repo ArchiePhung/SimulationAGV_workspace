@@ -72,10 +72,14 @@ class statusButton:
 		# self.bt_cyB_transmit = 0
 
 		# -- Archie 
-		self.bt_sendAGVarrived = 0
+		self.numberConveyor = 1
 		self.bt_signalCYrecieve = 0
 		self.bt_signalCYstop = 0
 		self.bt_signalCYpush = 0
+
+		self.bt_signalCYTwinrecieve = 0
+		self.bt_signalCYTwinstop = 0
+		self.bt_signalCYTwinpush = 0
 
 		self.bt_charger = 0
 		self.bt_speaker = 0
@@ -101,6 +105,7 @@ class statusButton:
 		# self.bt_toyoWrite_8 = 0
 		# self.ck_enable_link = 0
 		# -
+		self.bt_linkConveyor = 0
 		self.bt_resetFrameWork = 0
 		self.vs_speed = 50
 
@@ -144,12 +149,26 @@ class statusColor:
 		# self.lbc_cyB_ssAhead = 0
 		# self.lbc_cyB_ssBehind = 0
 		# self.lbc_cyB_ssTray = 0
+
 		self.lbc_CYssAheadSignal = 0
 		self.lbc_CYssBehindSignal = 0
 		self.lbc_CYssTraySignal = 0
+		
+		self.lbc_CYcntedSignal = 0
 		self.lbc_CYdoneSignal = 0		
 		self.lbc_CYreadySignal = 0
 		self.lbc_CYerrorSignal = 0
+
+		self.lbc_CYTwinssAheadSignal1 = 0
+		self.lbc_CYTwinssBehindSignal1 = 0
+		self.lbc_CYTwinssTraySignal1 = 0
+		self.lbc_CYTwinssAheadSignal2 = 0
+		self.lbc_CYTwinssBehindSignal2 = 0
+		self.lbc_CYTwinssTraySignal2 = 0
+
+		self.lbc_CYTwindoneSignal = 0		
+		self.lbc_CYTwinreadySignal = 0
+		self.lbc_CYTwinerrorSignal = 0
 
 		self.lbc_port_rtc = 0
 		self.lbc_port_rs485 = 0
@@ -157,8 +176,8 @@ class statusColor:
 		# - 
 		self.lbc_mission_cy11 = 0
 		self.lbc_mission_cy12 = 0
-		self.lbc_mission_cy13 = 0
 		self.lbc_mission_cy21 = 0
+		self.lbc_mission_cy22 = 0
 		self.lbc_mission_charge = 0
 
 		# self.lbc_safetyConveyor1 = 0
@@ -192,8 +211,10 @@ class valueLable:
 		self.lbv_route_job2 = ''
 		self.lbv_route_message = ''
 
-		self.lbv_conveyorA = ''
-		self.lbv_conveyorB = ''
+		self.lbv_CYname = ''
+		self.lbv_CYTwinname = ''
+		self.lbv_CYTwinssname1 = ''
+		self.lbv_CYTwinssname2 = ''
 
 		self.lbv_coorAverage_x = ''
 		self.lbv_coorAverage_y = ''
@@ -230,7 +251,7 @@ class valueLable:
 class WelcomeScreen(QDialog):
 	def __init__(self):
 		super(WelcomeScreen, self).__init__()
-		loadUi("/home/tiger/simulation_ws/src/app_ros600/interface/app_shiv12_AGVcnv.ui", self)
+		loadUi("/home/tiger/simulation_ws/src/app_ros600/interface/app_agv12conveyor.ui", self)
 		# --
 		self.statusButton = statusButton()
 		self.statusColor  = statusColor()
@@ -271,6 +292,11 @@ class WelcomeScreen(QDialog):
 		self.bt_disableBrake_on.clicked.connect(self.clicked_brakeOn)
 		self.bt_disableBrake_off.clicked.connect(self.clicked_brakeOff)
 
+		# -- 
+		self.bt_linkCY_on.clicked.connect(self.clicked_linkCY_on)
+		self.bt_linkCY_off.clicked.connect(self.clicked_linkCY_off)
+		self.lbc_CYcntedSignal.disable()
+
 		# --
 		self.bt_forwards.clicked.connect(self.clicked_forwards)
 		self.bt_backwards.clicked.connect(self.clicked_backwards)
@@ -305,11 +331,23 @@ class WelcomeScreen(QDialog):
 		self.bt_pw_delete.clicked.connect(self.clicked_password_delete)
 
 		# --
-		self.bt_sendAGVarrived.clicked.connect(self.clicked_btSendAGVarrived)
+		self.bt_signalCYrecieve.pressed.connect(self.pressed_btSignalCYreceive)
+		self.bt_signalCYrecieve.released.connect(self.released_btSignalCYreceive)
 
-		self.bt_signalCYrecieve.clicked.connect(self.clicked_btSignalCYreceive)
-		self.bt_signalCYstop.clicked.connect(self.clicked_btSignalCYstop)
-		self.bt_signalCYpush.clicked.connect(self.clicked_btSignalCYpush)		
+		self.bt_signalCYstop.pressed.connect(self.pressed_btSignalCYstop)
+		self.bt_signalCYstop.released.connect(self.released_btSignalCYstop)
+
+		self.bt_signalCYpush.pressed.connect(self.pressed_btSignalCYpush)		
+		self.bt_signalCYpush.released.connect(self.released_btSignalCYpush)
+
+		self.bt_signalCYTwinrecieve.pressed.connect(self.pressed_btSignalCYTwinreceive)
+		self.bt_signalCYTwinrecieve.released.connect(self.released_btSignalCYTwinreceive)
+
+		self.bt_signalCYTwinstop.pressed.connect(self.pressed_btSignalCYTwinstop)
+		self.bt_signalCYTwinstop.released.connect(self.released_btSignalCYTwinstop)
+
+		self.bt_signalCYTwinpush.pressed.connect(self.pressed_btSignalCYTwinpush)
+		self.bt_signalCYTwinpush.released.connect(self.released_btSignalCYTwinpush)
 
 		# --
 		self.bt_speakerSound_1.pressed.connect(self.pressed_speakerSound_1)
@@ -337,13 +375,12 @@ class WelcomeScreen(QDialog):
 		self.bt_disPointA.clicked.connect(self.clicked_pointA)
 		self.bt_disPointB.clicked.connect(self.clicked_pointB)
 		# -- 
-		self.cb_chooseConveyor.addItem(" Số 13 và 23")
-		self.cb_chooseConveyor.addItem(" Số 12 và 22")
-		self.cb_chooseConveyor.addItem(" Số 11 và 21")
-
-		# --
-		self.cb_chooseTypeConveyor.addItem("Đơn lẻ")
-		self.cb_chooseTypeConveyor.addItem("Theo tầng")
+		self.cb_chooseConveyor.addItem(" Số 11")
+		self.cb_chooseConveyor.addItem(" Số 12")
+		self.cb_chooseConveyor.addItem(" Số 21")
+		self.cb_chooseConveyor.addItem(" Số 22")
+		self.cb_chooseConveyor.addItem(" Tầng 1")
+		self.cb_chooseConveyor.addItem(" Tầng 2")
 
 		# -- Set speed manual
 		self.bt_upSpeed.pressed.connect(self.pressed_upSpeed)
@@ -395,6 +432,9 @@ class WelcomeScreen(QDialog):
 		self.timeSave_showToyoWrite = rospy.Time.now()
 		# -
 		self.isShow_moveHand = 1
+		
+		# - 
+		self.isShow_testCY = 1
 
 	def process_fast(self):
 		self.pb_qualityWifi.setValue(self.valueLable.lbv_qualityWifi)
@@ -450,7 +490,7 @@ class WelcomeScreen(QDialog):
 		# --
 		self.show_password()
 		# --
-		self.statusButton.ck_enable_link = self.ck_enable_link.isChecked()
+		# self.statusButton.bt_linkConveyor = self.ck_enable_link.isChecked()
 		# --
 		# if (self.statusButton.bt_stop == 1):
 		# 	if (self.data_color.lbc_status_break == 1):
@@ -564,6 +604,21 @@ class WelcomeScreen(QDialog):
 		self.bt_disableBrake_off.setStyleSheet("background-color: blue;")
 		self.bt_disableBrake_on.setStyleSheet("background-color: white;")
 		self.clicked_stop()
+	
+	# -- 
+	def clicked_linkCY_on(self):
+		self.statusButton.bt_linkConveyor = 1
+		self.bt_linkCY_on.setStyleSheet("background-color: blue;")
+		self.bt_linkCY_off.setStyleSheet("background-color: white;")
+		self.clicked_stop()
+		self.lbc_CYcntedSignal.enable()
+
+	def clicked_linkCY_off(self):
+		self.statusButton.bt_linkConveyor = 0
+		self.bt_linkCY_off.setStyleSheet("background-color: blue;")
+		self.bt_linkCY_on.setStyleSheet("background-color: white;")
+		self.clicked_stop()
+		self.lbc_CYcntedSignal.disable()
 	# --
 	def clicked_forwards(self):
 		self.statusButton.bt_forwards = 1
@@ -710,39 +765,64 @@ class WelcomeScreen(QDialog):
 			self.password_data = self.password_data[:-1]
 
 	# --
-	def clicked_btSendAGVarrived(self):
-		self.statusButton.bt_sendAGVarrived != self.statusButton.bt_sendAGVarrived
-		if self.statusButton.bt_sendAGVarrived == 1:
-			self.bt_sendAGVarrived.setStyleSheet("background-color: blue;")
-		else:
-			self.bt_sendAGVarrived.setStyleSheet("background-color: white;")
+	def pressed_btSignalCYreceive(self):
+		self.statusButton.bt_signalCYrecieve = 1
+		self.bt_signalCYrecieve.setStyleSheet("background-color: blue;")
 		self.clicked_stop()
 
-	def clicked_btSignalCYreceive(self):
-		self.statusButton.bt_signalCYrecieve != self.statusButton.bt_signalCYrecieve
-		if self.statusButton.bt_signalCYrecieve == 1:
-			self.bt_signalCYrecieve.setStyleSheet("background-color: blue;")
-		else:
-			self.bt_signalCYrecieve.setStyleSheet("background-color: white;")
-
+	def released_btSignalCYreceive(self):
+		self.statusButton.bt_signalCYrecieve = 0
+		self.bt_signalCYrecieve.setStyleSheet("background-color: white;")
+		self.clicked_stop()
+	# -
+	def pressed_btSignalCYstop(self):
+		self.statusButton.bt_signalCYstop = 1
+		self.bt_signalCYstop.setStyleSheet("background-color: blue;")
 		self.clicked_stop()
 
-	def clicked_btSignalCYstop(self):
-		self.statusButton.bt_signalCYstop != self.statusButton.bt_signalCYstop
-		if self.statusButton.bt_signalCYstop == 1:
-			self.bt_signalCYstop.setStyleSheet("background-color: blue;")
-		else:
-			self.bt_signalCYstop.setStyleSheet("background-color: white;")
-
+	def released_btSignalCYstop(self):
+		self.statusButton.bt_signalCYstop = 0
+		self.bt_signalCYstop.setStyleSheet("background-color: white;")
+		self.clicked_stop()
+	# -
+	def pressed_btSignalCYpush(self):
+		self.statusButton.bt_signalCYpush = 1
+		self.bt_signalCYpush.setStyleSheet("background-color: blue;")
 		self.clicked_stop()
 
-	def clicked_btSignalCYpush(self):
-		self.statusButton.bt_signalCYpush != self.statusButton.bt_signalCYpush
-		if self.statusButton.bt_signalCYpush == 1:
-			self.bt_signalCYpush.setStyleSheet("background-color: blue;")
-		else:
-			self.bt_signalCYpush.setStyleSheet("background-color: white;")
+	def released_btSignalCYpush(self):
+		self.statusButton.bt_signalCYpush = 0
+		self.bt_signalCYpush.setStyleSheet("background-color: white;")
+		self.clicked_stop()
+	# - 
+	def pressed_btSignalCYTwinreceive(self):
+		self.statusButton.bt_signalCYTwinrecieve = 1
+		self.bt_signalCYTwinrecieve.setStyleSheet("background-color: blue;")
+		self.clicked_stop()
 
+	def released_btSignalCYTwinreceive(self):
+		self.statusButton.bt_signalCYTwinrecieve = 0
+		self.bt_signalCYTwinrecieve.setStyleSheet("background-color: white;")
+		self.clicked_stop()
+	#-
+	def pressed_btSignalCYTwinstop(self):
+		self.statusButton.bt_signalCYTwinstop = 1
+		self.bt_signalCYTwinstop.setStyleSheet("background-color: blue;")
+		self.clicked_stop()
+
+	def released_btSignalCYTwinstop(self):
+		self.statusButton.bt_signalCYTwinstop = 0
+		self.bt_signalCYTwinstop.setStyleSheet("background-color: white;")
+		self.clicked_stop()
+	# -
+	def pressed_btSignalCYTwinpush(self):
+		self.statusButton.bt_signalCYTwinpush = 1
+		self.bt_signalCYTwinpush.setStyleSheet("background-color: blue;")
+		self.clicked_stop()
+
+	def released_btSignalCYTwinpush(self):
+		self.statusButton.bt_signalCYTwinpush = 0
+		self.bt_signalCYTwinpush.setStyleSheet("background-color: white;")
 		self.clicked_stop()
 
 	# --
@@ -813,65 +893,6 @@ class WelcomeScreen(QDialog):
 		delta_distance = self.calculate_distance(self.pointA, self.pointB)
 		self.lbv_deltaDistance.setText( str(round(delta_distance, 3)) )
 
-	def pressed_toyoWrite_enable(self):
-		self.bt_toyoWrite_enable.setStyleSheet("background-color: blue;")
-		self.statusButton.bt_toyoWrite_enable = 1
-
-		if (self.enable_showToyoWrite == 1):
-			self.enable_showToyoWrite = 0
-
-	def released_toyoWrite_enable(self):
-		self.bt_toyoWrite_enable.setStyleSheet("background-color: white;")
-		self.statusButton.bt_toyoWrite_enable = 0
-
-	def pressed_toyoWrite_1(self):
-		if (self.statusButton.bt_toyoWrite_1 == 1):
-			self.statusButton.bt_toyoWrite_1 = 0
-		else:
-			self.statusButton.bt_toyoWrite_1 = 1
-
-	def pressed_toyoWrite_2(self):
-		if (self.statusButton.bt_toyoWrite_2 == 1):
-			self.statusButton.bt_toyoWrite_2 = 0
-		else:
-			self.statusButton.bt_toyoWrite_2 = 1
-
-	def pressed_toyoWrite_3(self):
-		if (self.statusButton.bt_toyoWrite_3 == 1):
-			self.statusButton.bt_toyoWrite_3 = 0
-		else:
-			self.statusButton.bt_toyoWrite_3 = 1
-
-	def pressed_toyoWrite_4(self):
-		if (self.statusButton.bt_toyoWrite_4 == 1):
-			self.statusButton.bt_toyoWrite_4 = 0
-		else:
-			self.statusButton.bt_toyoWrite_4 = 1
-
-	def pressed_toyoWrite_5(self):
-		if (self.statusButton.bt_toyoWrite_5 == 1):
-			self.statusButton.bt_toyoWrite_5 = 0
-		else:
-			self.statusButton.bt_toyoWrite_5 = 1
-
-	def pressed_toyoWrite_6(self):
-		if (self.statusButton.bt_toyoWrite_6 == 1):
-			self.statusButton.bt_toyoWrite_6 = 0
-		else:
-			self.statusButton.bt_toyoWrite_6 = 1
-
-	def pressed_toyoWrite_7(self):
-		if (self.statusButton.bt_toyoWrite_7 == 1):
-			self.statusButton.bt_toyoWrite_7 = 0
-		else:
-			self.statusButton.bt_toyoWrite_7 = 1
-
-	def pressed_toyoWrite_8(self):
-		if (self.statusButton.bt_toyoWrite_8 == 1):
-			self.statusButton.bt_toyoWrite_8 = 0
-		else:
-			self.statusButton.bt_toyoWrite_8 = 1
-
 	def pressed_upSpeed(self):
 		self.statusButton.vs_speed += 10
 		if self.statusButton.vs_speed >= 100:
@@ -929,13 +950,7 @@ class WelcomeScreen(QDialog):
 			self.lbc_mission_cy12.setStyleSheet("background-color: green; color: white;")
 		else:
 			self.lbc_mission_cy12.setStyleSheet("background-color: red; color: white;")
-		# --
-		if self.statusColor.lbc_mission_cy13 == 0:
-			self.lbc_mission_cy13.setStyleSheet("background-color: white; color: black;")
-		elif self.statusColor.lbc_mission_cy13 == 1:
-			self.lbc_mission_cy13.setStyleSheet("background-color: green; color: white;")
-		else:
-			self.lbc_mission_cy13.setStyleSheet("background-color: red; color: white;")
+
 		# --
 		if self.statusColor.lbc_mission_cy21 == 0:
 			self.lbc_mission_cy21.setStyleSheet("background-color: white; color: black;")
@@ -950,13 +965,6 @@ class WelcomeScreen(QDialog):
 			self.lbc_mission_cy22.setStyleSheet("background-color: green; color: white;")
 		else:
 			self.lbc_mission_cy22.setStyleSheet("background-color: red; color: white;")
-		# --
-		if self.statusColor.lbc_mission_cy23 == 0:
-			self.lbc_mission_cy23.setStyleSheet("background-color: white; color: black;")
-		elif self.statusColor.lbc_mission_cy23 == 1:
-			self.lbc_mission_cy23.setStyleSheet("background-color: green; color: white;")
-		else:
-			self.lbc_mission_cy23.setStyleSheet("background-color: red; color: white;")
 		# --
 		if self.statusColor.lbc_mission_charge == 0:
 			self.lbc_mission_charge.setStyleSheet("background-color: white; color: black;")
@@ -1083,103 +1091,152 @@ class WelcomeScreen(QDialog):
 		elif (self.statusColor.lbc_port_nav350 == 0):
 			self.lbc_port_nav350.setStyleSheet("background-color: red; color: white;")
 
-		# -- ConveyorA sensor ahead
-		if (self.statusColor.lbc_cyA_ssAhead == 1):
-			self.lbc_cyA_ssAhead.setStyleSheet("background-color: blue; color: white;")
-		elif (self.statusColor.lbc_cyA_ssAhead == 0):
-			self.lbc_cyA_ssAhead.setStyleSheet("background-color: white; color: black;")
+		# -- Conveyor test single
+		if (self.statusColor.lbc_CYssAheadSignal == 1):
+			self.lbc_CYssAheadSignal.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_CYssAheadSignal == 0):
+			self.lbc_CYssAheadSignal.setStyleSheet("background-color: white; color: black;")
 
-		# -- ConveyorA sensor behind
-		if (self.statusColor.lbc_cyA_ssBehind == 1):
-			self.lbc_cyA_ssBehind.setStyleSheet("background-color: blue; color: white;")
-		elif (self.statusColor.lbc_cyA_ssBehind == 0):
-			self.lbc_cyA_ssBehind.setStyleSheet("background-color: white; color: black;")
+		if (self.statusColor.lbc_CYssBehindSignal == 1):
+			self.lbc_CYssBehindSignal.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_CYssBehindSignal == 0):
+			self.lbc_CYssBehindSignal.setStyleSheet("background-color: white; color: black;")
 
-		# -- ConveyorA sensor tray
-		if (self.statusColor.lbc_cyA_ssTray == 1):
-			self.lbc_cyA_ssTray.setStyleSheet("background-color: blue; color: white;")
-		elif (self.statusColor.lbc_cyA_ssTray == 0):
-			self.lbc_cyA_ssTray.setStyleSheet("background-color: white; color: black;")
+		if (self.statusColor.lbc_CYssTraySignal == 1):
+			self.lbc_CYssTraySignal.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_CYssTraySignal == 0):
+			self.lbc_CYssTraySignal.setStyleSheet("background-color: white; color: black;")
+		
+		# -- Conveyor test single
+		if (self.statusColor.lbc_CYdoneSignal == 1):
+			self.lbc_CYdoneSignal.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_CYdoneSignal == 0):
+			self.lbc_CYdoneSignal.setStyleSheet("background-color: white; color: black;")
 
-		# -- ConveyorB sensor ahead
-		if (self.statusColor.lbc_cyB_ssAhead == 1):
-			self.lbc_cyB_ssAhead.setStyleSheet("background-color: blue; color: white;")
-		elif (self.statusColor.lbc_cyB_ssAhead == 0):
-			self.lbc_cyB_ssAhead.setStyleSheet("background-color: white; color: black;")
+		if (self.statusColor.lbc_CYreadySignal == 1):
+			self.lbc_CYreadySignal.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_CYreadySignal == 0):
+			self.lbc_CYreadySignal.setStyleSheet("background-color: white; color: black;")
 
-		# -- ConveyorB sensor behind
-		if (self.statusColor.lbc_cyB_ssBehind == 1):
-			self.lbc_cyB_ssBehind.setStyleSheet("background-color: blue; color: white;")
-		elif (self.statusColor.lbc_cyB_ssBehind == 0):
-			self.lbc_cyB_ssBehind.setStyleSheet("background-color: white; color: black;")
+		if (self.statusColor.lbc_CYerrorSignal == 1):
+			self.lbc_CYerrorSignal.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_CYerrorSignal == 0):
+			self.lbc_CYerrorSignal.setStyleSheet("background-color: white; ")
 
-		# -- ConveyorB sensor tray
-		if (self.statusColor.lbc_cyB_ssTray == 1):
-			self.lbc_cyB_ssTray.setStyleSheet("background-color: blue; color: white;")
-		elif (self.statusColor.lbc_cyB_ssTray == 0):
-			self.lbc_cyB_ssTray.setStyleSheet("background-color: white; ")
+		# -- Conveyor test multiple
+		if (self.statusColor.lbc_CYTwinssAheadSignal1 == 1):
+			self.lbc_CYTwinssAheadSignal1.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_CYTwinssAheadSignal1 == 0):
+			self.lbc_CYTwinssAheadSignal1.setStyleSheet("background-color: white; color: black;")
 
-		# -- 
-		if (self.statusColor.lbc_safetyConveyor1 == 1):
-			self.lbc_safetyConveyor1.setStyleSheet("background-color: blue; color: white;")
-		elif (self.statusColor.lbc_safetyConveyor1 == 0):
-			self.lbc_safetyConveyor1.setStyleSheet("background-color: white; ")
+		if (self.statusColor.lbc_CYTwinssBehindSignal1 == 1):
+			self.lbc_CYTwinssBehindSignal1.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_CYTwinssBehindSignal1 == 0):
+			self.lbc_CYTwinssBehindSignal1.setStyleSheet("background-color: white; color: black;")
 
-		if (self.statusColor.lbc_safetyConveyor2 == 1):
-			self.lbc_safetyConveyor2.setStyleSheet("background-color: blue; color: white;")
-		elif (self.statusColor.lbc_safetyConveyor2 == 0):
-			self.lbc_safetyConveyor2.setStyleSheet("background-color: white; ")
+		if (self.statusColor.lbc_CYTwinssTraySignal1 == 1):
+			self.lbc_CYTwinssTraySignal1.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_CYTwinssTraySignal1 == 0):
+			self.lbc_CYTwinssTraySignal1.setStyleSheet("background-color: white; color: black;")
+		# --
+		if (self.statusColor.lbc_CYTwinssAheadSignal2 == 1):
+			self.lbc_CYTwinssAheadSignal2.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_CYTwinssAheadSignal2 == 0):
+			self.lbc_CYTwinssAheadSignal2.setStyleSheet("background-color: white; color: black;")
+		
+		if (self.statusColor.lbc_CYTwinssBehindSignal2 == 1):
+			self.lbc_CYTwinssBehindSignal2.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_CYTwinssBehindSignal2 == 0):
+			self.lbc_CYTwinssBehindSignal2.setStyleSheet("background-color: white; color: black;")
 
-		# -- Archie add 22/12/2023
-		if (self.statusColor.lbc_safetyConveyorPos11 == 1):
-			self.lbc_safetyConveyorPos11.setStyleSheet("background-color: blue; color: white;")
-		elif (self.statusColor.lbc_safetyConveyorPos11 == 0):
-			self.lbc_safetyConveyorPos11.setStyleSheet("background-color: white; ")
+		if (self.statusColor.lbc_CYTwinssTraySignal2 == 1):
+			self.lbc_CYTwinssTraySignal2.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_CYTwinssTraySignal2 == 0):
+			self.lbc_CYTwinssTraySignal2.setStyleSheet("background-color: white; color: black;")
+		
+		# --
+		if (self.statusColor.lbc_CYTwindoneSignal == 1):
+			self.lbc_CYTwindoneSignal.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_CYTwindoneSignal == 0):
+			self.lbc_CYTwindoneSignal.setStyleSheet("background-color: white; color: black;")
 
-		if (self.statusColor.lbc_safetyConveyorPos12 == 1):
-			self.lbc_safetyConveyorPos12.setStyleSheet("background-color: blue; color: white;")
-		elif (self.statusColor.lbc_safetyConveyorPos12 == 0):
-			self.lbc_safetyConveyorPos12.setStyleSheet("background-color: white; ")
+		if (self.statusColor.lbc_CYTwinreadySignal == 1):
+			self.lbc_CYTwinreadySignal.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_CYTwinreadySignal == 0):
+			self.lbc_CYTwinreadySignal.setStyleSheet("background-color: white; color: black;")
 
-		if (self.statusColor.lbc_safetyConveyorPos13 == 1):
-			self.lbc_safetyConveyorPos13.setStyleSheet("background-color: blue; color: white;")
-		elif (self.statusColor.lbc_safetyConveyorPos13 == 0):
-			self.lbc_safetyConveyorPos13.setStyleSheet("background-color: white; ")
+		if (self.statusColor.lbc_CYTwinerrorSignal == 1):
+			self.lbc_CYTwinerrorSignal.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_CYTwinerrorSignal == 0):
+			self.lbc_CYTwinerrorSignal.setStyleSheet("background-color: white; ")
 
-		if (self.statusColor.lbc_safetyConveyorPos21 == 1):
-			self.lbc_safetyConveyorPos21.setStyleSheet("background-color: blue; color: white;")
-		elif (self.statusColor.lbc_safetyConveyorPos21 == 0):
-			self.lbc_safetyConveyorPos21.setStyleSheet("background-color: white; ")
+		# -- Conveyor Cluster Signal in factory
+		if (self.statusColor.lbc_toyoReadBit1 == 1):
+			self.lbc_toyoReadBit1.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_toyoReadBit1 == 0):
+			self.lbc_toyoReadBit1.setStyleSheet("background-color: white; color: black;")
 
-		if (self.statusColor.lbc_safetyConveyorPos22 == 1):
-			self.lbc_safetyConveyorPos22.setStyleSheet("background-color: blue; color: white;")
-		elif (self.statusColor.lbc_safetyConveyorPos22 == 0):
-			self.lbc_safetyConveyorPos22.setStyleSheet("background-color: white; ")
+		if (self.statusColor.lbc_toyoReadBit2 == 1):
+			self.lbc_toyoReadBit2.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_toyoReadBit2 == 0):
+			self.lbc_toyoReadBit2.setStyleSheet("background-color: white; color: black;")
 
-		if (self.statusColor.lbc_safetyConveyorPos23 == 1):
-			self.lbc_safetyConveyorPos23.setStyleSheet("background-color: blue; color: white;")
-		elif (self.statusColor.lbc_safetyConveyorPos23 == 0):
-			self.lbc_safetyConveyorPos23.setStyleSheet("background-color: white; ")
+		if (self.statusColor.lbc_toyoReadBit3 == 1):
+			self.lbc_toyoReadBit3.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_toyoReadBit3 == 0):
+			self.lbc_toyoReadBit3.setStyleSheet("background-color: white; color: black;")
+
+		if (self.statusColor.lbc_toyoReadBit4 == 1):
+			self.lbc_toyoReadBit4.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_toyoReadBit4 == 0):
+			self.lbc_toyoReadBit4.setStyleSheet("background-color: white; color: black;")
+
+		if (self.statusColor.lbc_toyoReadBit5 == 1):
+			self.lbc_toyoReadBit5.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_toyoReadBit5 == 0):
+			self.lbc_toyoReadBit5.setStyleSheet("background-color: white; color: black;")
+
+		if (self.statusColor.lbc_toyoReadBit6 == 1):
+			self.lbc_toyoReadBit6.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_toyoReadBit6 == 0):
+			self.lbc_toyoReadBit6.setStyleSheet("background-color: white; color: black;")
+
+		if (self.statusColor.lbc_toyoReadBit7 == 1):
+			self.lbc_toyoReadBit7.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_toyoReadBit7 == 0):
+			self.lbc_toyoReadBit7.setStyleSheet("background-color: white; color: black;")
+
+		if (self.statusColor.lbc_toyoReadBit8 == 1):
+			self.lbc_toyoReadBit8.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_toyoReadBit8 == 0):
+			self.lbc_toyoReadBit8.setStyleSheet("background-color: white; color: black;")
 
 	def set_labelValue(self): # App_lbv()
 		num = self.cb_chooseConveyor.currentIndex()
-		self.statusButton.numberConveyorA = 1 + num*2
-		self.statusButton.numberConveyorB = 2 + num*2
+		# print("Current index of cb choose conveyor is", num)
+		self.statusButton.numberConveyor = 1 + num
 		# -
-		if self.statusButton.numberConveyorA == 1 or self.statusButton.numberConveyorA == 0:
-			self.valueLable.lbv_conveyorA = "Băng tải\nsố " + "13"
-		elif self.statusButton.numberConveyorA == 3:
-			self.valueLable.lbv_conveyorA = "Băng tải\nsố " + "12"
-		elif self.statusButton.numberConveyorA == 5:
-			self.valueLable.lbv_conveyorA = "Băng tải\nsố " + "11"
+		if num <= 3:
+			self.isShow_testCY = 1
+			if self.statusButton.numberConveyor == 1 or self.statusButton.numberConveyor == 0:
+				self.valueLable.lbv_CYname = "Băng tải\nsố " + "11"
+			elif self.statusButton.numberConveyor == 2:
+				self.valueLable.lbv_CYname = "Băng tải\nsố " + "12"
+			elif self.statusButton.numberConveyor == 3:
+				self.valueLable.lbv_CYname = "Băng tải\nsố " + "21"
+			elif self.statusButton.numberConveyor == 4:
+				self.valueLable.lbv_CYname = "Băng tải\nsố " + "22"
+		else:
+			self.isShow_testCY = 0
+			if self.statusButton.numberConveyor == 5:
+				self.valueLable.lbv_CYTwinname = "Băng tải\ntầng" + "1"
+				self.valueLable.lbv_CYTwinssname1 = "Cảm biến 11"
+				self.valueLable.lbv_CYTwinssname2 = "Cảm biến 12"
+			elif self.statusButton.numberConveyor == 6:
+				self.valueLable.lbv_CYTwinname = "Băng tải\ntầng" + "2"
+				self.valueLable.lbv_CYTwinssname1 = "Cảm biến 21"
+				self.valueLable.lbv_CYTwinssname2 = "Cảm biến 22"			
 		# --
-		if self.statusButton.numberConveyorB == 2 or self.statusButton.numberConveyorB == 0:
-			self.valueLable.lbv_conveyorB = "Băng tải\nsố " + "23"
-		elif self.statusButton.numberConveyorB == 4:
-			self.valueLable.lbv_conveyorB = "Băng tải\nsố " + "22"
-		elif self.statusButton.numberConveyorB == 6:
-			self.valueLable.lbv_conveyorB = "Băng tải\nsố " + "21"
-		# -- 
 
 		self.lbv_battery.setText(self.valueLable.lbv_battery)
 
@@ -1187,9 +1244,9 @@ class WelcomeScreen(QDialog):
 		self.lbv_coordinates_y.setText(self.valueLable.lbv_coordinates_y)
 		self.lbv_coordinates_r.setText(self.valueLable.lbv_coordinates_r)
 
-		self.lbv_coordinates_x1.setText(self.valueLable.lbv_coordinates_x)
-		self.lbv_coordinates_y1.setText(self.valueLable.lbv_coordinates_y)
-		self.lbv_coordinates_r1.setText(self.valueLable.lbv_coordinates_r)
+		# self.lbv_coordinates_x1.setText(self.valueLable.lbv_coordinates_x)
+		# self.lbv_coordinates_y1.setText(self.valueLable.lbv_coordinates_y)
+		# self.lbv_coordinates_r1.setText(self.valueLable.lbv_coordinates_r)
 
 		self.lbv_numberReflector.setText(self.valueLable.lbv_numbeReflector)
 		self.lbv_numberReflector1.setText(self.valueLable.lbv_numbeReflector)
@@ -1209,8 +1266,10 @@ class WelcomeScreen(QDialog):
 		
 		self.lbv_route_message.setText(self.valueLable.lbv_route_message)
 
-		self.lbv_conveyorA.setText(self.valueLable.lbv_conveyorA)
-		self.lbv_conveyorB.setText(self.valueLable.lbv_conveyorB)
+		self.lbv_CYname.setText(self.valueLable.lbv_CYname)
+		self.lbv_CYTwinname.setText(self.valueLable.lbv_CYTwinname)
+		self.lbv_CYTwinssname1.setText(self.valueLable.lbv_CYTwinssname1)
+		self.lbv_CYTwinssname2.setText(self.valueLable.lbv_CYTwinssname2)
 
 		# self.lbv_coorAverage_x.setText(self.valueLable.lbv_coorAverage_x)
 		# self.lbv_coorAverage_y.setText(self.valueLable.lbv_coorAverage_y)
@@ -1246,7 +1305,7 @@ class WelcomeScreen(QDialog):
 			self.fr_launch.show()
 			self.fr_run.hide()
 			self.show_launch()
-			self.ck_enable_link.setChecked(False)
+			# self.ck_enable_link.setChecked(False)
 		else:
 			self.fr_run.show()
 			self.fr_launch.hide()
@@ -1261,7 +1320,7 @@ class WelcomeScreen(QDialog):
 					self.fr_handMode_conveyor.hide()
 					self.fr_handMode_move.hide()
 					self.fr_listTask.show()
-					self.ck_enable_link.setChecked(False)
+					# self.ck_enable_link.setChecked(False)
 					self.isShow_moveHand = 1
 
 				elif (self.modeRuning == self.modeRun_byhand):
@@ -1274,6 +1333,12 @@ class WelcomeScreen(QDialog):
 					else:
 						self.fr_handMode_conveyor.show()
 						self.fr_handMode_move.hide()
+						if self.isShow_testCY == 1:
+							self.fr_testCYsingle.show()
+							self.fr_testCYmultiple.hide()
+						else:
+							self.fr_testCYsingle.hide()
+							self.fr_testCYmultiple.show()
 
 	def coorAverage_run(self):
 		if (self.bt_coorAverage_status == 1):
@@ -1377,7 +1442,7 @@ class Program(threading.Thread):
 		self.widget.addWidget(self.welcomeScreen)
 		self.widget.setFixedHeight(580)
 		self.widget.setFixedWidth(1024)
-		self.widget.setWindowFlag(Qt.FramelessWindowHint)
+		# self.widget.setWindowFlag(Qt.FramelessWindowHint)             # Archie need to uncomment in final
 		# --
 		self.valueLable = valueLable()
 		self.statusColor = statusColor()
@@ -1404,29 +1469,28 @@ class Program(threading.Thread):
 		rospy.Subscriber("/POWER_info", POWER_info, self.callback_Main) 
 		self.main_info = POWER_info()
 
-		# -- Conveyor No.1
-		rospy.Subscriber("/status_conveyor13", Status_conveyor, self.callback_conveyor1) 
-		self.status_conveyor13 = Status_conveyor()
+		# -- Conveyor No.11
+		rospy.Subscriber("/signal_conveyor11", Signal_ConveyorAGV, self.callback_conveyor11) 
+		self.status_conveyor11 = Signal_ConveyorAGV()
 
-		# -- Conveyor No.2
-		rospy.Subscriber("/status_conveyor23", Status_conveyor, self.callback_conveyor2) 
-		self.status_conveyor23 = Status_conveyor()
+		# -- Conveyor No.12
+		rospy.Subscriber("/signal_conveyor12", Signal_ConveyorAGV, self.callback_conveyor12) 
+		self.status_conveyor12 = Signal_ConveyorAGV()
 
-		# -- Conveyor No.3
-		rospy.Subscriber("/status_conveyor12", Status_conveyor, self.callback_conveyor3) 
-		self.status_conveyor12 = Status_conveyor()
+		# -- Conveyor No.21
+		rospy.Subscriber("/signal_conveyor21", Signal_ConveyorAGV, self.callback_conveyor21) 
+		self.status_conveyor21 = Signal_ConveyorAGV()
 
-		# -- Conveyor No.4
-		rospy.Subscriber("/status_conveyor22", Status_conveyor, self.callback_conveyor4) 
-		self.status_conveyor22 = Status_conveyor()
+		# -- Conveyor No.22
+		rospy.Subscriber("/signal_conveyor22", Signal_ConveyorAGV, self.callback_conveyor22) 
+		self.status_conveyor22 = Signal_ConveyorAGV()
 
-		# -- Conveyor No.5
-		rospy.Subscriber("/status_conveyor11", Status_conveyor, self.callback_conveyor5) 
-		self.status_conveyor11 = Status_conveyor()
+		# -- AGV toyo input -- 
+		rospy.Subscriber("/signal_conveyorToyo", Signal_ConveyorToyo, self.callback_conveyorToyo) 
+		self.status_conveyorToyo = Signal_ConveyorToyo()
 
-		# -- Conveyor No.6
-		rospy.Subscriber("/status_conveyor21", Status_conveyor, self.callback_conveyor6) 
-		self.status_conveyor21 = Status_conveyor()
+		rospy.Subscriber("/AGVToyo_signal", Signal_AGVToyo, self.callBack_AGVToyo_signal)
+		self.AGVToyo_signal = Signal_AGVToyo()
 
 		# -- CPD Boad
 		rospy.Subscriber("/CPD_read", CPD_read, self.callback_CPD) 
@@ -1490,7 +1554,6 @@ class Program(threading.Thread):
 		# --
 		self.app_button.bt_speaker = 1
 
-
 	def callback_brakeControl(self, data):
 		self.status_brake = data
 		
@@ -1505,24 +1568,25 @@ class Program(threading.Thread):
 
 	def callback_Main(self, data):
 		self.main_info = data
-		
-	def callback_conveyor1(self, data):
-		self.status_conveyor13 = data
 
-	def callback_conveyor2(self, data):
-		self.status_conveyor23 = data
-
-	def callback_conveyor3(self, data):
-		self.status_conveyor12 = data
-
-	def callback_conveyor4(self, data):
-		self.status_conveyor22 = data
-
-	def callback_conveyor5(self, data):
+	# Archie add 28/12/2023
+	def callback_conveyor11(self, data):
 		self.status_conveyor11 = data
 
-	def callback_conveyor6(self, data):
+	def callback_conveyor12(self, data):
+		self.status_conveyor12 = data
+
+	def callback_conveyor21(self, data):
 		self.status_conveyor21 = data
+
+	def callback_conveyor22(self, data):
+		self.status_conveyor22 = data
+
+	def callback_conveyorToyo(self, data):
+		self.status_conveyorToyo = data
+
+	def callBack_AGVToyo_signal(self, data):
+		self.AGVToyo_signal = data
 
 	def callback_CPD(self, data):
 		self.status_CPD = data
@@ -1792,35 +1856,43 @@ class Program(threading.Thread):
 		self.statusColor.lbc_emg = self.main_info.EMC_status
 		self.statusColor.lbc_blsock = self.HC_info.vacham
 		# --
-		if (self.welcomeScreen.statusButton.numberConveyorA == 1):
-			self.statusColor.lbc_cyA_ssAhead  = self.status_conveyor13.sensor_limitAhead
-			self.statusColor.lbc_cyA_ssBehind = self.status_conveyor13.sensor_limitBehind
-			self.statusColor.lbc_cyA_ssTray   = self.status_conveyor13.sensor_checkRack
+		if (self.welcomeScreen.statusButton.numberConveyor == 1):
+			self.statusColor.lbc_CYssAheadSignal  = self.status_conveyor11.signal_limitAhead
+			self.statusColor.lbc_CYssBehindSignal = self.status_conveyor11.signal_limitBehind
+			self.statusColor.lbc_CYssTraySignal   = self.status_conveyor11.signal_ssCheckTray
 
-		elif (self.welcomeScreen.statusButton.numberConveyorA == 3):
-			self.statusColor.lbc_cyA_ssAhead  = self.status_conveyor12.sensor_limitAhead
-			self.statusColor.lbc_cyA_ssBehind = self.status_conveyor12.sensor_limitBehind
-			self.statusColor.lbc_cyA_ssTray   = self.status_conveyor12.sensor_checkRack
+		elif (self.welcomeScreen.statusButton.numberConveyor == 2):
+			self.statusColor.lbc_CYssAheadSignal  = self.status_conveyor12.signal_limitAhead
+			self.statusColor.lbc_CYssBehindSignal = self.status_conveyor12.signal_limitBehind
+			self.statusColor.lbc_CYssTraySignal   = self.status_conveyor12.signal_ssCheckTray
 
-		elif (self.welcomeScreen.statusButton.numberConveyorA == 5):
-			self.statusColor.lbc_cyA_ssAhead  = self.status_conveyor11.sensor_limitAhead
-			self.statusColor.lbc_cyA_ssBehind = self.status_conveyor11.sensor_limitBehind
-			self.statusColor.lbc_cyA_ssTray   = self.status_conveyor11.sensor_checkRack
-		# -
-		if (self.welcomeScreen.statusButton.numberConveyorB == 2):
-			self.statusColor.lbc_cyB_ssAhead  = self.status_conveyor23.sensor_limitAhead
-			self.statusColor.lbc_cyB_ssBehind = self.status_conveyor23.sensor_limitBehind
-			self.statusColor.lbc_cyB_ssTray   = self.status_conveyor23.sensor_checkRack
+		elif (self.welcomeScreen.statusButton.numberConveyor == 3):
+			self.statusColor.lbc_CYssAheadSignal  = self.status_conveyor21.signal_limitAhead
+			self.statusColor.lbc_CYssBehindSignal = self.status_conveyor21.signal_limitBehind
+			self.statusColor.lbc_CYssTraySignal   = self.status_conveyor21.signal_ssCheckTray
 
-		elif self.welcomeScreen.statusButton.numberConveyorB == 4:
-			self.statusColor.lbc_cyB_ssAhead  = self.status_conveyor22.sensor_limitAhead
-			self.statusColor.lbc_cyB_ssBehind = self.status_conveyor22.sensor_limitBehind
-			self.statusColor.lbc_cyB_ssTray   = self.status_conveyor22.sensor_checkRack
+		elif (self.welcomeScreen.statusButton.numberConveyor == 4):
+			self.statusColor.lbc_CYssAheadSignal  = self.status_conveyor22.signal_limitAhead
+			self.statusColor.lbc_CYssBehindSignal = self.status_conveyor22.signal_limitBehind
+			self.statusColor.lbc_CYssTraySignal   = self.status_conveyor22.signal_ssCheckTray
 
-		elif self.welcomeScreen.statusButton.numberConveyorB == 6:
-			self.statusColor.lbc_cyB_ssAhead  = self.status_conveyor21.sensor_limitAhead
-			self.statusColor.lbc_cyB_ssBehind = self.status_conveyor21.sensor_limitBehind
-			self.statusColor.lbc_cyB_ssTray   = self.status_conveyor21.sensor_checkRack
+		elif self.welcomeScreen.statusButton.numberConveyor == 5:
+			self.statusColor.lbc_CYTwinssAheadSignal1  = self.status_conveyor11.signal_limitAhead
+			self.statusColor.lbc_CYTwinssBehindSignal1 = self.status_conveyor11.signal_limitBehind
+			self.statusColor.lbc_CYTwinssTraySignal1   = self.status_conveyor11.signal_ssCheckTray
+
+			self.statusColor.lbc_CYTwinssAheadSignal2  = self.status_conveyor12.signal_limitAhead
+			self.statusColor.lbc_CYTwinssBehindSignal2 = self.status_conveyor12.signal_limitBehind
+			self.statusColor.lbc_CYTwinssTraySignal2   = self.status_conveyor12.signal_ssCheckTray
+
+		elif self.welcomeScreen.statusButton.numberConveyor == 6:
+			self.statusColor.lbc_CYTwinssAheadSignal1  = self.status_conveyor21.signal_limitAhead
+			self.statusColor.lbc_CYTwinssBehindSignal1 = self.status_conveyor21.signal_limitBehind
+			self.statusColor.lbc_CYTwinssTraySignal1   = self.status_conveyor21.signal_ssCheckTray
+
+			self.statusColor.lbc_CYTwinssAheadSignal2  = self.status_conveyor22.signal_limitAhead
+			self.statusColor.lbc_CYTwinssBehindSignal2 = self.status_conveyor22.signal_limitBehind
+			self.statusColor.lbc_CYTwinssTraySignal2   = self.status_conveyor22.signal_ssCheckTray
 
 		# -- Port
 		self.statusColor.lbc_port_rtc    = self.status_port.rtc
@@ -1829,19 +1901,15 @@ class Program(threading.Thread):
 		# -- 
 		self.statusColor.lbc_mission_cy11 = 0
 		self.statusColor.lbc_mission_cy12 = 0
-		self.statusColor.lbc_mission_cy13 = 0
 		self.statusColor.lbc_mission_cy21 = 0
 		self.statusColor.lbc_mission_cy22 = 0
-		self.statusColor.lbc_mission_cy23 = 0
 		self.statusColor.lbc_mission_charge = 0
 		# -
 		if self.server_cmdRequest.after_mission == 0: # - Khong co Nhiem vu.
 			self.statusColor.lbc_mission_cy11 = 0
 			self.statusColor.lbc_mission_cy12 = 0
-			self.statusColor.lbc_mission_cy13 = 0
 			self.statusColor.lbc_mission_cy21 = 0
 			self.statusColor.lbc_mission_cy22 = 0
-			self.statusColor.lbc_mission_cy23 = 0
 			self.statusColor.lbc_mission_charge = 0
 
 		elif self.server_cmdRequest.before_mission == 66 and self.server_cmdRequest.after_mission == 10: # - Nhiem vu Sac.
@@ -1850,10 +1918,8 @@ class Program(threading.Thread):
 			if self.server_cmdRequest.before_mission == 0: # - Nhan hang.
 				self.statusColor.lbc_mission_cy11 = self.getBit_fromInt16(self.server_cmdRequest.after_mission, 0)
 				self.statusColor.lbc_mission_cy12 = self.getBit_fromInt16(self.server_cmdRequest.after_mission, 1)
-				self.statusColor.lbc_mission_cy13 = self.getBit_fromInt16(self.server_cmdRequest.after_mission, 2)
-				self.statusColor.lbc_mission_cy21 = self.getBit_fromInt16(self.server_cmdRequest.after_mission, 3)
-				self.statusColor.lbc_mission_cy22 = self.getBit_fromInt16(self.server_cmdRequest.after_mission, 4)
-				self.statusColor.lbc_mission_cy23 = self.getBit_fromInt16(self.server_cmdRequest.after_mission, 5)
+				self.statusColor.lbc_mission_cy21 = self.getBit_fromInt16(self.server_cmdRequest.after_mission, 2)
+				self.statusColor.lbc_mission_cy22 = self.getBit_fromInt16(self.server_cmdRequest.after_mission, 3)
 				self.statusColor.lbc_mission_charge = 0
 			else: # - Tra hang
 				if self.server_cmdRequest.after_mission == 1:
@@ -1861,25 +1927,29 @@ class Program(threading.Thread):
 				elif self.server_cmdRequest.after_mission == 2:
 					self.statusColor.lbc_mission_cy12 = 2
 				elif self.server_cmdRequest.after_mission == 3:
-					self.statusColor.lbc_mission_cy13 = 2
+					self.statusColor.lbc_mission_cy21 = 2
 				elif self.server_cmdRequest.after_mission == 4:
 					self.statusColor.lbc_mission_cy21 = 2
-				elif self.server_cmdRequest.after_mission == 5:
-					self.statusColor.lbc_mission_cy22 = 2
-				elif self.server_cmdRequest.after_mission == 6:
-					self.statusColor.lbc_mission_cy23 = 2
+		
+		# --
+		self.statusColor.lbc_toyoReadBit1 = self.status_conveyorToyo.signal_toyoBit1
+		self.statusColor.lbc_toyoReadBit2 = self.status_conveyorToyo.signal_toyoBit2
+		self.statusColor.lbc_toyoReadBit3 = self.status_conveyorToyo.signal_toyoBit3
+		self.statusColor.lbc_toyoReadBit4 = self.status_conveyorToyo.signal_toyoBit4
+		self.statusColor.lbc_toyoReadBit5 = self.status_conveyorToyo.signal_toyoBit5_connected
+		self.statusColor.lbc_toyoReadBit6 = self.status_conveyorToyo.signal_toyoBit6_done
+		self.statusColor.lbc_toyoReadBit7 = self.status_conveyorToyo.signal_toyoBit7_ready
+		self.statusColor.lbc_toyoReadBit8 = self.status_conveyorToyo.signal_toyoBit8_error
 
-		# ---
-		self.statusColor.lbc_safetyConveyor1 = self.status_CPD.input1
-		self.statusColor.lbc_safetyConveyor2 = self.status_CPD.input2
+		# -- 
+		self.statusColor.lbc_CYcntedSignal = self.AGVToyo_signal.signal_toyoBit5_connected
+		self.statusColor.lbc_CYdoneSignal = self.AGVToyo_signal.signal_toyoBit6_done
+		self.statusColor.lbc_CYreadySignal = self.AGVToyo_signal.signal_toyoBit7_ready
+		self.statusColor.lbc_CYerrorSignal = self.AGVToyo_signal.signal_toyoBit8_error
 
-		# Archie add 22/12/2023
-		self.statusColor.lbc_safetyConveyorPos11 = self.status_CPD.input3
-		self.statusColor.lbc_safetyConveyorPos12 = self.status_CPD.input4
-		self.statusColor.lbc_safetyConveyorPos13 = self.status_CPD.input5
-		self.statusColor.lbc_safetyConveyorPos21 = self.status_CPD.input6
-		self.statusColor.lbc_safetyConveyorPos22 = self.status_CPD.input7
-		self.statusColor.lbc_safetyConveyorPos23 = self.status_CPD.input8		
+		self.statusColor.lbc_CYTwindoneSignal = self.AGVToyo_signal.signal_toyoBit6_done
+		self.statusColor.lbc_CYTwinreadySignal = self.AGVToyo_signal.signal_toyoBit7_ready
+		self.statusColor.lbc_CYTwinerrorSignal = self.AGVToyo_signal.signal_toyoBit8_error
 
 	def controlAll(self):
 		# -- Mode show
@@ -1978,16 +2048,6 @@ class Program(threading.Thread):
 		self.valueLable.lbv_debug2 = self.navigation_respond.debug2
 
 	def readButton(self):
-		# -- Toyo
-		self.app_button.bt_toyoWrite_1 = self.welcomeScreen.statusButton.bt_toyoWrite_1
-		self.app_button.bt_toyoWrite_2 = self.welcomeScreen.statusButton.bt_toyoWrite_2
-		self.app_button.bt_toyoWrite_3 = self.welcomeScreen.statusButton.bt_toyoWrite_3
-		self.app_button.bt_toyoWrite_4 = self.welcomeScreen.statusButton.bt_toyoWrite_4
-		self.app_button.bt_toyoWrite_5 = self.welcomeScreen.statusButton.bt_toyoWrite_5
-		self.app_button.bt_toyoWrite_6 = self.welcomeScreen.statusButton.bt_toyoWrite_6
-		self.app_button.bt_toyoWrite_7 = self.welcomeScreen.statusButton.bt_toyoWrite_7
-		self.app_button.bt_toyoWrite_8 = self.welcomeScreen.statusButton.bt_toyoWrite_8
-		self.app_button.ck_enable_link = self.welcomeScreen.statusButton.ck_enable_link
 		# -- 
 		self.app_button.bt_cancelMission = self.welcomeScreen.statusButton.bt_cancelMission
 		self.app_button.bt_passAuto 	 = self.welcomeScreen.statusButton.bt_passAuto
@@ -2004,36 +2064,38 @@ class Program(threading.Thread):
 		self.app_button.bt_charger	= self.welcomeScreen.statusButton.bt_charger
 		self.app_button.bt_speaker  = self.welcomeScreen.statusButton.bt_speaker
 		self.app_button.bt_brake	= self.welcomeScreen.statusButton.bt_brake
+		# --
+		self.app_button.bt_linkConveyor = self.welcomeScreen.statusButton.bt_linkConveyor
 		# -- 
-		if (self.welcomeScreen.statusButton.numberConveyorA == 1):
-			self.app_button.bt_cy1_received = self.welcomeScreen.statusButton.bt_cyA_received
-			self.app_button.bt_cy1_stop 	= self.welcomeScreen.statusButton.bt_cyA_stop
-			self.app_button.bt_cy1_transmit = self.welcomeScreen.statusButton.bt_cyA_transmit
+		if (self.welcomeScreen.statusButton.numberConveyor == 1):
+			self.app_button.bt_cy11_receive = self.welcomeScreen.statusButton.bt_signalCYrecieve
+			self.app_button.bt_cy11_stop = self.welcomeScreen.statusButton.bt_signalCYstop
+			self.app_button.bt_cy11_push = self.welcomeScreen.statusButton.bt_signalCYpush
 
-		elif (self.welcomeScreen.statusButton.numberConveyorA == 3):
-			self.app_button.bt_cy3_received = self.welcomeScreen.statusButton.bt_cyA_received
-			self.app_button.bt_cy3_stop 	= self.welcomeScreen.statusButton.bt_cyA_stop
-			self.app_button.bt_cy3_transmit = self.welcomeScreen.statusButton.bt_cyA_transmit
+		elif (self.welcomeScreen.statusButton.numberConveyor == 2):
+			self.app_button.bt_cy12_receive = self.welcomeScreen.statusButton.bt_signalCYrecieve
+			self.app_button.bt_cy12_stop = self.welcomeScreen.statusButton.bt_signalCYstop
+			self.app_button.bt_cy12_push = self.welcomeScreen.statusButton.bt_signalCYpush
 
-		elif (self.welcomeScreen.statusButton.numberConveyorA == 5):
-			self.app_button.bt_cy5_received = self.welcomeScreen.statusButton.bt_cyA_received
-			self.app_button.bt_cy5_stop 	= self.welcomeScreen.statusButton.bt_cyA_stop
-			self.app_button.bt_cy5_transmit = self.welcomeScreen.statusButton.bt_cyA_transmit
+		elif (self.welcomeScreen.statusButton.numberConveyor == 3):
+			self.app_button.bt_cy21_receive = self.welcomeScreen.statusButton.bt_signalCYrecieve
+			self.app_button.bt_cy21_stop = self.welcomeScreen.statusButton.bt_signalCYstop
+			self.app_button.bt_cy21_push = self.welcomeScreen.statusButton.bt_signalCYpush
 
-		if (self.welcomeScreen.statusButton.numberConveyorB == 2):
-			self.app_button.bt_cy2_received = self.welcomeScreen.statusButton.bt_cyB_received
-			self.app_button.bt_cy2_stop 	= self.welcomeScreen.statusButton.bt_cyB_stop
-			self.app_button.bt_cy2_transmit = self.welcomeScreen.statusButton.bt_cyB_transmit
+		elif (self.welcomeScreen.statusButton.numberConveyor == 4):
+			self.app_button.bt_cy22_receive = self.welcomeScreen.statusButton.bt_signalCYrecieve
+			self.app_button.bt_cy22_stop = self.welcomeScreen.statusButton.bt_signalCYstop
+			self.app_button.bt_cy22_push = self.welcomeScreen.statusButton.bt_signalCYpush
 
-		elif (self.welcomeScreen.statusButton.numberConveyorB == 4):
-			self.app_button.bt_cy4_received = self.welcomeScreen.statusButton.bt_cyB_received
-			self.app_button.bt_cy4_stop 	= self.welcomeScreen.statusButton.bt_cyB_stop
-			self.app_button.bt_cy4_transmit = self.welcomeScreen.statusButton.bt_cyB_transmit
+		elif (self.welcomeScreen.statusButton.numberConveyor == 5):
+			self.app_button.bt_cy1stfloor_receive = self.welcomeScreen.statusButton.bt_signalCYTwinrecieve
+			self.app_button.bt_cy1stfloor_stop = self.welcomeScreen.statusButton.bt_signalCYTwinstop
+			self.app_button.bt_cy1stfloor_push = self.welcomeScreen.statusButton.bt_signalCYTwinpush
 
-		elif (self.welcomeScreen.statusButton.numberConveyorB == 6):
-			self.app_button.bt_cy6_received = self.welcomeScreen.statusButton.bt_cyB_received
-			self.app_button.bt_cy6_stop 	= self.welcomeScreen.statusButton.bt_cyB_stop
-			self.app_button.bt_cy6_transmit = self.welcomeScreen.statusButton.bt_cyB_transmit
+		elif (self.welcomeScreen.statusButton.numberConveyor == 6):
+			self.app_button.bt_cy2ndfloor_receive = self.welcomeScreen.statusButton.bt_signalCYTwinrecieve
+			self.app_button.bt_cy2ndfloor_stop = self.welcomeScreen.statusButton.bt_signalCYTwinstop
+			self.app_button.bt_cy2ndfloor_push = self.welcomeScreen.statusButton.bt_signalCYTwinpush
 
 		self.app_button.bt_speakerSound_1 = self.welcomeScreen.statusButton.bt_speakerSound_1
 		self.app_button.bt_speakerSound_2 = self.welcomeScreen.statusButton.bt_speakerSound_2

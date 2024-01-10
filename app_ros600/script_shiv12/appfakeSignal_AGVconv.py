@@ -393,7 +393,7 @@ class Program(threading.Thread):
 		#self.address_traffic = "192.168.1.92"
 		self.pre_timePing = time.time()
 		# --
-		rospy.init_node('app_ros', anonymous=False)
+		rospy.init_node('appFakeSignal', anonymous=False)
 		self.rate = rospy.Rate(40)
 
 		self.app = QApplication(sys.argv)
@@ -407,7 +407,7 @@ class Program(threading.Thread):
 		self.widget.addWidget(self.welcomeScreen)
 		self.widget.setFixedHeight(580)
 		self.widget.setFixedWidth(1024)
-		self.widget.setWindowFlag(Qt.FramelessWindowHint)
+		# self.widget.setWindowFlag(Qt.FramelessWindowHint)
 		# --
 		self.statusConveyor = statusConveyor()
 		self.statusColor = statusColor()
@@ -496,6 +496,16 @@ class Program(threading.Thread):
 		self.statusColor.lbc_agvToyoBit7_ready = self.AGVToyo_signal.signal_toyoBit7_ready
 		self.statusColor.lbc_agvToyoBit8_error = self.AGVToyo_signal.signal_toyoBit8_error
 
+		if self.AGVToyo_signal.signal_toyoBit6_done == 1:
+			self.welcomeScreen.statusButton.bt_cvoToyoBit1 = 0
+			self.welcomeScreen.statusButton.bt_cvoToyoBit2 = 0
+			self.welcomeScreen.statusButton.bt_cvoToyoBit3 = 0
+			self.welcomeScreen.statusButton.bt_cvoToyoBit4 = 0
+			self.welcomeScreen.statusButton.bt_cvoToyoBit5_connected = 0
+			self.welcomeScreen.statusButton.bt_cvoToyoBit6_done = 0
+			self.welcomeScreen.statusButton.bt_cvoToyoBit7_ready = 0
+			self.welcomeScreen.statusButton.bt_cvoToyoBit8_error = 0		
+
 	def readButton(self):
 		# -- 
 		self.data_signalConveyor11.signal_limitAhead = self.welcomeScreen.statusButton.bt_limitAhead11
@@ -528,10 +538,10 @@ class Program(threading.Thread):
 		self.data_signalConveyorToyo.signal_toyoBit8_error = self.welcomeScreen.statusButton.bt_cvoToyoBit8_error
 		
 	def readLineEdit(self):
-		self.data_signalConveyor11.Conveyor_status = self.welcomeScreen.statusConveyor.cvoState11
-		self.data_signalConveyor12.Conveyor_status = self.welcomeScreen.statusConveyor.cvoState12
-		self.data_signalConveyor21.Conveyor_status = self.welcomeScreen.statusConveyor.cvoState21
-		self.data_signalConveyor22.Conveyor_status = self.welcomeScreen.statusConveyor.cvoState22
+		self.data_signalConveyor11.status = self.welcomeScreen.statusConveyor.cvoState11
+		self.data_signalConveyor12.status = self.welcomeScreen.statusConveyor.cvoState12
+		self.data_signalConveyor21.status = self.welcomeScreen.statusConveyor.cvoState21
+		self.data_signalConveyor22.status = self.welcomeScreen.statusConveyor.cvoState22
 
 	def run(self):
 		# -- 

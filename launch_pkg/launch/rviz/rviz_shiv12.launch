@@ -1,0 +1,5 @@
+<launch>
+  <!-- Hiển thị qua rviz -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find agv_simulation)/config/rvizconfig.rviz" />  
+
+</launch> 

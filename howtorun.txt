@@ -32,3 +32,4 @@ PUB lộ trình: test_AGVconveyor.txt
 ==> Test algorithm
 
 12. Run part code of AGV Conveyor in SHIV12(stiControl and stiNavigation)
+roslaunch launch_pkg run_shiv12_AGVcvo.launch
