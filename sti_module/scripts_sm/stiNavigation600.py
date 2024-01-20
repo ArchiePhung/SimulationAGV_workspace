@@ -2266,7 +2266,6 @@ class rickshaw_navigation():
 			self.step_move = 0
 			self.completed_all = 0
 			self.completed_angle = 0
-			self.completed_move = 0
 			
 		if self.modeMove_now == 0: # -- Stop and Reset.
 			self.navigationRespond.message = "Stop and Reset"

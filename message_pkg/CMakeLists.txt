@@ -24,6 +24,7 @@ add_message_files(
   Parking_request.msg
   Parking_respond.msg
   App_button.msg
+  App_button12.msg
   App_color.msg
   App_lbv.msg
   App_launch.msg

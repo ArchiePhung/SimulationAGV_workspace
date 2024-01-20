@@ -6259,11 +6259,11 @@ trái</string>
       </property>
      </widget>
     </widget>
-    <zorder>fr_listTask</zorder>
     <zorder>fr_handMode_move</zorder>
     <zorder>fr_handMode_conveyor</zorder>
     <zorder>fr_password</zorder>
     <zorder>fr_agv</zorder>
+    <zorder>fr_listTask</zorder>
    </widget>
    <widget class="QFrame" name="fr_setting">
     <property name="geometry">
@@ -8527,8 +8527,6 @@ quy trình</string>
     <zorder>lb_numberReflector1</zorder>
     <zorder>lbv_numberReflector1</zorder>
    </widget>
-   <zorder>fr_setting</zorder>
-   <zorder>fr_control</zorder>
    <zorder>bt_passHand</zorder>
    <zorder>lb_version</zorder>
    <zorder>bt_passAuto</zorder>
@@ -8538,6 +8536,8 @@ quy trình</string>
    <zorder>bt_cancelMission</zorder>
    <zorder>bt_clearError</zorder>
    <zorder>cb_status</zorder>
+   <zorder>fr_setting</zorder>
+   <zorder>fr_control</zorder>
   </widget>
   <widget class="QProgressBar" name="pb_qualityWifi">
    <property name="geometry">

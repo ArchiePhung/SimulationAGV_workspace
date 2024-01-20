@@ -246,7 +246,14 @@ class valueLable:
 		self.lbv_navi_type = ''
 		self.lbv_debug1 = ''
 		self.lbv_debug2 = ''
-		# self. = ''
+
+		# -- pin details
+		self.lbv_pinStatus = ''
+		self.lbv_pinVolt = ''
+		self.lbv_pinCurr = ''
+		self.lbv_pinPercent = ''
+		self.lbv_pinTimeCharge = ''
+		self.lbv_pinTimeChargePropose = ''
 
 class WelcomeScreen(QDialog):
 	def __init__(self):
@@ -295,7 +302,6 @@ class WelcomeScreen(QDialog):
 		# -- 
 		self.bt_linkCY_on.clicked.connect(self.clicked_linkCY_on)
 		self.bt_linkCY_off.clicked.connect(self.clicked_linkCY_off)
-		self.lbc_CYcntedSignal.disable()
 
 		# --
 		self.bt_forwards.clicked.connect(self.clicked_forwards)
@@ -611,14 +617,12 @@ class WelcomeScreen(QDialog):
 		self.bt_linkCY_on.setStyleSheet("background-color: blue;")
 		self.bt_linkCY_off.setStyleSheet("background-color: white;")
 		self.clicked_stop()
-		self.lbc_CYcntedSignal.enable()
 
 	def clicked_linkCY_off(self):
 		self.statusButton.bt_linkConveyor = 0
 		self.bt_linkCY_off.setStyleSheet("background-color: blue;")
 		self.bt_linkCY_on.setStyleSheet("background-color: white;")
 		self.clicked_stop()
-		self.lbc_CYcntedSignal.disable()
 	# --
 	def clicked_forwards(self):
 		self.statusButton.bt_forwards = 1
@@ -702,6 +706,7 @@ class WelcomeScreen(QDialog):
 
 	def process_slow(self):
 		self.set_valueBattery(self.valueLable.lbv_battery)
+		# -
 		
 	def clicked_hideSetting(self):
 		self.isShow_setting = 0
@@ -1107,7 +1112,12 @@ class WelcomeScreen(QDialog):
 		elif (self.statusColor.lbc_CYssTraySignal == 0):
 			self.lbc_CYssTraySignal.setStyleSheet("background-color: white; color: black;")
 		
-		# -- Conveyor test single
+		# -- toyo
+		if (self.statusColor.lbc_CYcntedSignal == 1):
+			self.lbc_CYcntedSignal.setStyleSheet("background-color: blue; color: white;")
+		elif (self.statusColor.lbc_CYcntedSignal == 0):
+			self.lbc_CYcntedSignal.setStyleSheet("background-color: white; color: black;")
+
 		if (self.statusColor.lbc_CYdoneSignal == 1):
 			self.lbc_CYdoneSignal.setStyleSheet("background-color: blue; color: white;")
 		elif (self.statusColor.lbc_CYdoneSignal == 0):
@@ -1154,7 +1164,7 @@ class WelcomeScreen(QDialog):
 		elif (self.statusColor.lbc_CYTwinssTraySignal2 == 0):
 			self.lbc_CYTwinssTraySignal2.setStyleSheet("background-color: white; color: black;")
 		
-		# --
+		# -- toyo
 		if (self.statusColor.lbc_CYTwindoneSignal == 1):
 			self.lbc_CYTwindoneSignal.setStyleSheet("background-color: blue; color: white;")
 		elif (self.statusColor.lbc_CYTwindoneSignal == 0):
@@ -1240,6 +1250,15 @@ class WelcomeScreen(QDialog):
 
 		self.lbv_battery.setText(self.valueLable.lbv_battery)
 
+		# - Pin Details
+		self.lbv_pinStatus.setText(self.valueLable.lbv_pinStatus)
+		self.lbv_pinVolt.setText(self.valueLable.lbv_pinVolt)
+		self.lbv_pinCurr.setText(self.valueLable.lbv_pinCurr)
+		self.lbv_pinPercent.setText(self.valueLable.lbv_pinPercent)
+		self.lbv_pinTimeCharge.setText(self.valueLable.lbv_pinTimeCharge)
+		self.lbv_pinTimeChargePropose.setText(self.valueLable.lbv_pinTimeChargePropose)
+
+		# -
 		self.lbv_coordinates_x.setText(self.valueLable.lbv_coordinates_x)
 		self.lbv_coordinates_y.setText(self.valueLable.lbv_coordinates_y)
 		self.lbv_coordinates_r.setText(self.valueLable.lbv_coordinates_r)
@@ -1469,6 +1488,10 @@ class Program(threading.Thread):
 		rospy.Subscriber("/POWER_info", POWER_info, self.callback_Main) 
 		self.main_info = POWER_info()
 
+		# -- Battery
+		rospy.Subscriber("/Pin_info", Pin_info, self.callback_Pin) 
+		self.pin_info = Pin_info()
+
 		# -- Conveyor No.11
 		rospy.Subscriber("/signal_conveyor11", Signal_ConveyorAGV, self.callback_conveyor11) 
 		self.status_conveyor11 = Signal_ConveyorAGV()
@@ -1568,6 +1591,9 @@ class Program(threading.Thread):
 
 	def callback_Main(self, data):
 		self.main_info = data
+
+	def callback_Pin(self, data):
+		self.pin_info = data
 
 	# Archie add 28/12/2023
 	def callback_conveyor11(self, data):
@@ -1803,6 +1829,22 @@ class Program(threading.Thread):
 			497:'Có Dị vật tại Tầng dưới băng tải', #
 			498:'Có Dị vật tại Tầng trên băng tải', #
 
+			# - 
+			301:'Không phát hiện vị trí Cụm máy băng tải',
+			502:'Cụm máy băng tải chưa sẵn sàng trả hàng',
+			503:'Cụm máy băng tải có lỗi',
+
+			# -
+			511:'Băng tải 11 đã có thùng nên không nhận',
+			512:'Băng tải 12 đã có thùng nên không nhận',
+			513:'Băng tải 21 đã có thùng nên không nhận',
+			514:'Băng tải 22 đã có thùng nên không nhận',
+
+			515:'Băng tải 11 không có thùng nên không trả',
+			516:'Băng tải 12 không có thùng nên không trả',
+			517:'Băng tải 21 không có thùng nên không trả',
+			518:'Băng tải 22 không có thùng nên không trả',
+
 			# - add 22/12/2023
 			391:'Không phát hiện vị trí băng tải nhận 11', # 
 			392:'Không phát hiện vị trí băng tải nhận 12', #
@@ -1813,6 +1855,15 @@ class Program(threading.Thread):
 		}
 		return switcher.get(val, 'UNK')
 
+	def convert_pinStatus(self, val):
+		switcher={
+			0:'Không sạc',
+			1:'Đang sạc pin',
+			2:'Pin đầy',
+			3:'Lỗi sạc pin'
+		}
+		return switcher.get(val, '')
+	
 	def show_job(self, val):
 		job_now = ''
 		switcher={
@@ -1979,12 +2030,19 @@ class Program(threading.Thread):
 		#self.valueLable.lbv_battery = "  " + str(bat)
 		self.valueLable.lbv_battery = "  " + str(self.NN_infoRespond.battery/10.)
 
+		self.valueLable.lbv_pinStatus = self.convert_pinStatus(self.pin_info.pinState)
+		self.valueLable.lbv_pinVolt = str(self.pin_info.pinVolt) + " V"
+		self.valueLable.lbv_pinCurr = str(self.pin_info.pinCurr) + " A"
+		self.valueLable.lbv_pinPercent = str(self.pin_info.pinPercent) + " %"
+		self.valueLable.lbv_pinPercent = self.pin_info.timeCharge
+		self.valueLable.lbv_pinTimeChargePropose = self.pin_info.timeChargePropose
+
 		# -- status AGV
 		self.statusColor.cb_status = self.NN_infoRespond.status
 		lg_err = len(self.NN_infoRespond.listError)
 		self.valueLable.listError = []
 		if (lg_err == 0):
-			self.valueLable.listError.append( self.convert_errorAll(0) )
+			self.valueLable.listError.append( self.convert_errorAll(0))
 		else:
 			length = len(self.valueLable.list_logError)
 			if length > 15:

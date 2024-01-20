@@ -24,7 +24,9 @@ PUB lộ trình: test_AGVconveyor.txt
 
 *** Test full 
 
-11. Update code for AGVL600 real in SHIV34
+11. Update code for AGVL600 real in SHIV34 
+
+Case: add 6 reflector sensor detect receiving-CY position
    - sti_control/scripts_fixerror/stiControl_agv600_21122023.py
    - app_ros600/script/app.py
    - app_ros600/interface/app.ui
@@ -33,3 +35,7 @@ PUB lộ trình: test_AGVconveyor.txt
 
 12. Run part code of AGV Conveyor in SHIV12(stiControl and stiNavigation)
 roslaunch launch_pkg run_shiv12_AGVcvo.launch
+
+13. Test code AGVL600 real in SHIV34 
+Case: Tray is not transferd completely, and it lie between AGV and CY
+roslaunch launch_pkg run_CY34_case1.launch

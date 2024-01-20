@@ -98,6 +98,9 @@ add_message_files(
 	PathInfo.msg
 	StopPoint.msg
 	#OC_test_status.msg
+
+	# Pin details
+	Pin_info.msg
 )	
 
 include_directories(

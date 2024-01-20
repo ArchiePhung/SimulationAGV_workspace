@@ -1,4 +1,4 @@
 bool signal_limitAhead
 bool signal_limitBehind
 bool signal_ssCheckTray
-int32 status
+int8 status

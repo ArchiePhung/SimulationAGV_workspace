@@ -320,18 +320,22 @@ class ros_control():
 		self.serverMission_unknown = 0
 		self.serverMission_liftDown_charger = 6
 		# -- Conveyor task.
-		self.CYTask_received = 1
+		self.CYTask_receive = 1
 		self.CYTask_push = 2
 		self.CYTask_stop = 0
 		self.conveyor11_taskByHand = self.CYTask_stop
 		self.conveyor12_taskByHand = self.CYTask_stop
 		self.conveyor21_taskByHand = self.CYTask_stop
 		self.conveyor22_taskByHand = self.CYTask_stop
-
 		# - Conveyor Status.
-		self.CYtask_done = 1
+		self.CYTask_done = 3                             # Archie: update scripts of OC board
 		self.CYTask_undone = 0
-		self.CY_error = -1
+		self.CYTask_running = 1
+		self.CYTaskreceive_TimeError = -1
+		self.CYTaskreceive_unkError = -3
+
+		self.CYTaskpush_TimeError = -2
+		self.CYTaskpush_unkError = -4
 		# -
 		self.allowTestNextCY = 1
 		# -- Speaker
@@ -414,12 +418,29 @@ class ros_control():
 		self.saveTime_EMG = rospy.Time.now()
 		self.saveTime_resetFrameWork = rospy.Time.now()
 
-		# - Conveyor machine error
+		# - Flag announce Conveyor machine error 
 		self.btValue_linkCY = 0
 		self.flag_CYmachine_posError = 0
 		self.flag_CYmachine_readyError = 0
 		self.flag_CYmachine_generalError = 0
 
+		# - Flag announce Conveyor AGV error
+		self.flag_CY11_pushError_Blank = 0
+		self.flag_CY11_receiveError_Full = 0
+		self.flag_CY12_pushError_Blank = 0
+		self.flag_CY12_receiveError_Full = 0
+		self.flag_CY21_pushError_Blank = 0
+		self.flag_CY21_receiveError_Full = 0
+		self.flag_CY22_pushError_Blank = 0
+		self.flag_CY22_receiveError_Full = 0		
+
+		self.CY11_register = 0
+		self.CY12_register = 0
+		self.CY21_register = 0
+		self.CY22_register = 0
+
+		self.case_task = 1
+		self.case_step = 0
 
 	# ------------------------ Call Back ------------------------ #
 	def callback_autoNow(self, data):
@@ -936,57 +957,57 @@ class ros_control():
 	# ------------------------ ------------------------ #
 	def synthetic_error(self):
 		listError_now = []
-		# -- EMG
+		# -- EMG          # Archie add 10/01/2023
 		# if self.main_info.EMC_status == 1:
-		if self.detect_EMG() == 1:
-			listError_now.append(121)
-		else:
-			# -- Lost Driver 1
-			if self.detectLost_driver() == 1: 
-				listError_now.append(251)
+		# if self.detect_EMG() == 1:
+		# 	listError_now.append(121)
+		# else:
+		# 	# -- Lost Driver 1
+		# 	if self.detectLost_driver() == 1: 
+		# 		listError_now.append(251)
 
-			# -- Error Driver 1
-			summation1 = self.driver1_respond.alarm_all + self.driver1_respond.alarm_overload + self.driver1_respond.warning
-			if (summation1 != 0):
-				listError_now.append(252)
+		# 	# -- Error Driver 1
+		# 	summation1 = self.driver1_respond.alarm_all + self.driver1_respond.alarm_overload + self.driver1_respond.warning
+		# 	if (summation1 != 0):
+		# 		listError_now.append(252)
 
-			# -- Lost Driver 2
-			if self.detectLost_driver() == 1: 
-				listError_now.append(261)
+		# 	# -- Lost Driver 2
+		# 	if self.detectLost_driver() == 1: 
+		# 		listError_now.append(261)
 
-			# -- Error Driver 2
-			summation2 = self.driver2_respond.alarm_all + self.driver2_respond.alarm_overload + self.driver2_respond.warning
-			if (summation2 != 0):
-				listError_now.append(262)
+		# 	# -- Error Driver 2
+		# 	summation2 = self.driver2_respond.alarm_all + self.driver2_respond.alarm_overload + self.driver2_respond.warning
+		# 	if (summation2 != 0):
+		# 		listError_now.append(262)
 
-		# -- Va cham
-		self.detect_blsockCollide()
-		if self.flag_blsockCollide == 1:
-			listError_now.append(122)
+		# -- Va cham      # Archie add 10/01/2023
+		# self.detect_blsockCollide()
+		# if self.flag_blsockCollide == 1:
+		# 	listError_now.append(122)
+  
+		# -- Lost RTC Board.   
+		# if (self.detectLost_RTC() == 1):       # Archie add 10/01/2023
+		# 	listError_now.append(311)
+		# else:
+		# 	# -- Error RTC Board: CAN not Send.
+		# 	# if (self.() == 1):
+		# 	# 	listError_now.append(312)
 
-		# -- Lost RTC Board.
-		if (self.detectLost_RTC() == 1):
-			listError_now.append(311)
-		else:
-			# -- Error RTC Board: CAN not Send.
-			# if (self.() == 1):
-			# 	listError_now.append(312)
+		# 	# -- Lost Main Board
+		# 	if (self.detectLost_Main() == 1):
+		# 		listError_now.append(321)
 
-			# -- Lost Main Board
-			if (self.detectLost_Main() == 1):
-				listError_now.append(321)
+		# 	# -- Lost HC Board.
+		# 	if self.detectLost_HC() == 1:
+		# 		listError_now.append(351)
 
-			# -- Lost HC Board.
-			if self.detectLost_HC() == 1:
-				listError_now.append(351)
+		# 	# -- Lost OC Board No.12
+		# 	if (self.detectLost_OC12() == 1):
+		# 		listError_now.append(344)
 
-			# -- Lost OC Board No.12
-			if (self.detectLost_OC12() == 1):
-				listError_now.append(344)
-
-			# -- Lost OC Board No.34
-			if self.detectLost_OC34() == 1:
-				listError_now.append(345)
+		# 	# -- Lost OC Board No.34
+		# 	if self.detectLost_OC34() == 1:
+		# 		listError_now.append(345)
 
 		# -- Goal Control
 		if self.detectLost_navigation() == 1:
@@ -994,29 +1015,29 @@ class ros_control():
 			self.pub_cmdVel(Twist(), self.rate_cmdvel, rospy.get_time())
 
 		# -- Lost Nav350
-		if (self.detectLost_nav() == 1):
-			listError_now.append(221)
+		# if (self.detectLost_nav() == 1):           # Archie add 10/01/2023
+		# 	listError_now.append(221)
 
 		# -- Lost pose robot
-		if (self.detectLost_poseRobot() == 1):
-			listError_now.append(222)
+		# if (self.detectLost_poseRobot() == 1):        # Archie add 10/01/2023
+		# 	listError_now.append(222)
 
 		# -- Lỗi không thể định vị tọa độ.
-		if self.mode_operate == self.md_auto and self.detectLost_reflectors() == 1: # 
-			listError_now.append(272)
+		# if self.mode_operate == self.md_auto and self.detectLost_reflectors() == 1: #              # Archie add 10/01/2023
+		# 	listError_now.append(272)
 
 		# -- Loi Code Parking:
 		if (self.parking_status.warning == 2):
 			listError_now.append(281)
 
-		# -- 19/01/2022 - Mat giao tiep voi Server 
-		sts_sr = self.detectLost_server()
-		if sts_sr == 1: # lost server
-			listError_now.append(431)
-		elif sts_sr == 2: # lost server: Ping
-			listError_now.append(432)
-		elif sts_sr == 3: # lost server: IP
-			listError_now.append(433)
+		# -- 19/01/2022 - Mat giao tiep voi Server                                # Archie add 10/01/2023
+		# sts_sr = self.detectLost_server()
+		# if sts_sr == 1: # lost server
+		# 	listError_now.append(431)
+		# elif sts_sr == 2: # lost server: Ping
+		# 	listError_now.append(432)
+		# elif sts_sr == 3: # lost server: IP
+		# 	listError_now.append(433)
 
 		# -- Cảnh báo: Low battery
 		if self.voltage < 23:
@@ -1051,22 +1072,22 @@ class ros_control():
 			listError_now.append(452)
 
 		# -- Cảnh Báo: không thể định vị tọa độ.
-		if self.mode_operate == self.md_by_hand and self.detectLost_reflectors() == 1: # 
-			listError_now.append(453)
+		# if self.mode_operate == self.md_by_hand and self.detectLost_reflectors() == 1: #                     # Archie add 10/01/2023
+		# 	listError_now.append(453)
 
-		# -- Cảnh báo: Trả hàng - Vị trí trả hàng đã có thùng.
+		# -- Cảnh báo: Trả hàng - Vị trí trả hàng đã có thùng.                                 # Archie remove
 		# - Rack 11
-		if self.flagWarning_rack11 == 1:
-			listError_now.append(491)
-		# - Rack 12
-		if self.flagWarning_rack12 == 1:
-			listError_now.append(492)
-		# - Rack 21
-		if self.flagWarning_rack21 == 1:
-			listError_now.append(494)
-		# - Rack 22
-		if self.flagWarning_rack22 == 1:
-			listError_now.append(495)
+		# if self.flagWarning_rack11 == 1:
+		# 	listError_now.append(491)
+		# # - Rack 12
+		# if self.flagWarning_rack12 == 1:
+		# 	listError_now.append(492)
+		# # - Rack 21
+		# if self.flagWarning_rack21 == 1:
+		# 	listError_now.append(494)
+		# # - Rack 22
+		# if self.flagWarning_rack22 == 1:
+		# 	listError_now.append(495)
 
 		# -- Cảnh báo: Băng tải không nhận được thùng hàng.
 		# - Conveyor 11
@@ -1082,9 +1103,9 @@ class ros_control():
 		if self.signal_conveyor22.status == 255 or self.flagWarning_receivedRack22 == 1:
 			listError_now.append(485)
 
-		# -- Cảnh báo: Băng tải không trả được thùng hàng.
-		# - Conveyor 11
-		if self.signal_conveyor11.status == 254:
+		# # -- Cảnh báo: Băng tải không trả được thùng hàng.
+		# # - Conveyor 11
+		if self.signal_conveyor11.status == 254:                                                   # Archie: Làm gì có trong code của mach nhỉ? 
 			listError_now.append(471)
 		# - Conveyor 12
 		if self.signal_conveyor12.status == 254:
@@ -1098,13 +1119,33 @@ class ros_control():
 
 		# - error of Conveyor machine
 		if self.flag_CYmachine_posError == 1:
-			listError_now.append(501)
+			listError_now.append(301)
 		if self.flag_CYmachine_readyError == 1:
 			listError_now.append(502)
-		if self.flag_CYmachine_generalError == 1:
+		if self.flag_CYmachine_generalError == 1 or self.signal_ConveyorToyo.signal_toyoBit8_error == 1:
 			listError_now.append(503)
-		if self.signal_ConveyorToyo.signal_toyoBit8_error == 1:
-			listError_now.append(504)
+
+		# - error of Conveyor AGV:
+		# - Cảnh báo trên băng tải AGV đã có thùng nên không thể nhận
+		if self.flag_CY11_receiveError_Full == 1:
+			listError_now.append(511)
+		if self.flag_CY12_receiveError_Full == 1:
+			listError_now.appedn(512)
+		if self.flag_CY21_receiveError_Full == 1:
+			listError_now.append(513)
+		if self.flag_CY22_receiveError_Full == 1:
+			listError_now.append(514)
+
+		# - Cảnh báo trên băng tải AGV không có thùng nên ko thể trả
+		if self.flag_CY11_pushError_Blank == 1:
+			listError_now.append(515)
+		if self.flag_CY12_pushError_Blank == 1:
+			listError_now.appedn(516)
+		if self.flag_CY21_pushError_Blank == 1:
+			listError_now.append(517)
+		if self.flag_CY22_pushError_Blank == 1:
+			listError_now.append(518)				
+
 	
 		return listError_now
 
@@ -1227,7 +1268,7 @@ class ros_control():
 	def convertCY_bt_flag(self):
 		# -- 11
 		if self.app_button.bt_cy11_receive == True:             
-			self.conveyor11_taskByHand = self.CYTask_received
+			self.conveyor11_taskByHand = self.CYTask_receive
 			self.conveyor12_taskByHand = self.CYTask_stop
 		
 		if self.app_button.bt_cy11_push == True:
@@ -1239,7 +1280,7 @@ class ros_control():
 			self.conveyor12_taskByHand = self.CYTask_stop
 		# - 12
 		if self.app_button.bt_cy12_receive == True:             
-			self.conveyor12_taskByHand = self.CYTask_received
+			self.conveyor12_taskByHand = self.CYTask_receive
 			self.conveyor11_taskByHand = self.CYTask_stop
 		
 		if self.app_button.bt_cy12_push == True:
@@ -1251,7 +1292,7 @@ class ros_control():
 			self.conveyor11_taskByHand = self.CYTask_stop
 		# - 21
 		if self.app_button.bt_cy21_receive == True:             
-			self.conveyor21_taskByHand = self.CYTask_received
+			self.conveyor21_taskByHand = self.CYTask_receive
 			self.conveyor22_taskByHand = self.CYTask_stop
 		
 		if self.app_button.bt_cy21_push == True:
@@ -1263,7 +1304,7 @@ class ros_control():
 			self.conveyor22_taskByHand = self.CYTask_stop
 		# - 22
 		if self.app_button.bt_cy22_receive == True:             
-			self.conveyor22_taskByHand = self.CYTask_received
+			self.conveyor22_taskByHand = self.CYTask_receive
 			self.conveyor21_taskByHand = self.CYTask_stop
 		
 		if self.app_button.bt_cy22_push == True:
@@ -1275,8 +1316,8 @@ class ros_control():
 			self.conveyor21_taskByHand = self.CYTask_stop
 		# -- 1st floor
 		if self.app_button.bt_cy1stfloor_receive == True:             
-			self.conveyor11_taskByHand = self.CYTask_received
-			self.conveyor12_taskByHand = self.CYTask_received
+			self.conveyor11_taskByHand = self.CYTask_receive
+			self.conveyor12_taskByHand = self.CYTask_receive
 		
 		if self.app_button.bt_cy1stfloor_push == True:
 			self.conveyor11_taskByHand = self.CYTask_push
@@ -1287,8 +1328,8 @@ class ros_control():
 			self.conveyor12_taskByHand = self.CYTask_stop
 		# -- 2nd floor
 		if self.app_button.bt_cy2ndfloor_receive == True:             
-			self.conveyor21_taskByHand = self.CYTask_received
-			self.conveyor22_taskByHand = self.CYTask_received
+			self.conveyor21_taskByHand = self.CYTask_receive
+			self.conveyor22_taskByHand = self.CYTask_receive
 		
 		if self.app_button.bt_cy2ndfloor_push == True:
 			self.conveyor21_taskByHand = self.CYTask_push
@@ -1316,64 +1357,67 @@ class ros_control():
 		self.conveyor12_taskByHand = self.CYTask_stop
 		self.conveyor21_taskByHand = self.CYTask_stop
 		self.conveyor22_taskByHand = self.CYTask_stop
-	
-	def ManualCY_link_undone(self, bit1, bit2, bit3, bit4, cy_mission1, cy_mission2, cy_mission3, cy_mission4):
+
+	def ManualCY_link_undone(self, bit_task, bit1, bit2, bit3, bit4, cy_mission1, cy_mission2, cy_mission3, cy_mission4):
 		no_cy = 0
 		self.AGVToyo_signal.signal_toyoBit5_connected = 1              #  send position and wait Conveyor ready
-		if self.signal_ConveyorToyo.signal_toyoBit5_connected == 1:    #  Detect AGV was linked
-			if self.signal_ConveyorToyo.signal_toyoBit7_ready == 1:    # Conveyor machine Ready
-				self.AGVToyo_signal.signal_toyoBit1 = bit1             #  send bit 1 
-				self.AGVToyo_signal.signal_toyoBit2 = bit2
-				self.AGVToyo_signal.signal_toyoBit3 = bit3
-				self.AGVToyo_signal.signal_toyoBit4 = bit4
 
-				if bit1 == 1 and bit2 == 0:
-					no_cy = 11
-				elif bit1 == 0 and bit2 == 1:
-					no_cy = 12
-				elif bit1 == 1 and bit2 == 1:
-					no_cy = 1112
+		if self.flag_CYmachine_posError == 0 and self.flag_CYmachine_readyError == 0:
+			if self.signal_ConveyorToyo.signal_toyoBit5_connected == 1:    #  Detect AGV was linked
+				if self.signal_ConveyorToyo.signal_toyoBit7_ready == 1:    # Conveyor machine Ready
+					self.AGVToyo_signal.signal_toyoBit1 = bit1             #  send bit 1 
+					self.AGVToyo_signal.signal_toyoBit2 = bit2
+					self.AGVToyo_signal.signal_toyoBit3 = bit3
+					self.AGVToyo_signal.signal_toyoBit4 = bit4
 
-				if bit3 == 1 and bit4 == 0:
-					no_cy = 21
-				elif bit3 == 0 and bit4 == 1:
-					no_cy = 22
-				elif bit3 == 1 and bit4 == 1:
-					no_cy = 2122
+					self.AGVToyo_signal.signal_toyoBit7_ready = bit_task
 
-				if self.signal_ConveyorToyo.signal_toyoBit1 == bit1 and self.signal_ConveyorToyo.signal_toyoBit2 == bit2 and self.signal_ConveyorToyo.signal_toyoBit3 == bit3 and self.signal_ConveyorToyo.signal_toyoBit4 == bit4:   #  receive respond bit1 from Conveyor
-					print("Liên kết băng tải, Gửi lệnh chạy băng tải ", str(no_cy))
-					self.control_conveyors.No1_mission = cy_mission1
-					self.control_conveyors.No2_mission = cy_mission2
-					self.control_conveyors.No3_mission = cy_mission3
-					self.control_conveyors.No4_mission = cy_mission4
-					self.AGVToyo_signal.signal_toyoBit6_done = 0
+					if bit1 == 1 and bit2 == 0:
+						no_cy = 11
+					elif bit1 == 0 and bit2 == 1:
+						no_cy = 12
+					elif bit1 == 1 and bit2 == 1:
+						no_cy = 1112
+
+					if bit3 == 1 and bit4 == 0:
+						no_cy = 21
+					elif bit3 == 0 and bit4 == 1:
+						no_cy = 22
+					elif bit3 == 1 and bit4 == 1:
+						no_cy = 2122
+
+					if self.signal_ConveyorToyo.signal_toyoBit1 == bit1 and self.signal_ConveyorToyo.signal_toyoBit2 == bit2 and self.signal_ConveyorToyo.signal_toyoBit3 == bit3 and self.signal_ConveyorToyo.signal_toyoBit4 == bit4:   #  receive respond bit1 from Conveyor
+						print("Liên kết băng tải, Gửi lệnh chạy băng tải ", str(no_cy))
+						self.control_conveyors.No1_mission = cy_mission1
+						self.control_conveyors.No2_mission = cy_mission2
+						self.control_conveyors.No3_mission = cy_mission3
+						self.control_conveyors.No4_mission = cy_mission4
+						self.AGVToyo_signal.signal_toyoBit6_done = 0
+				else:
+					print("Conveyor Machine is not ready to do task")
+					self.flag_CYmachine_readyError = 1
+			
 			else:
-				print("Conveyor Machine is not ready to do task")
-				self.flag_CYmachine_readyError = 1
-		
-		else:
-			print("Conveyor Machine is not linked ")
-			self.flag_CYmachine_posError = 1
-
+				print("Conveyor Machine is not linked ")
+				self.flag_CYmachine_posError = 1
 
 	def ManualCY_unlink_undone(self, bit1, bit2, bit3, bit4):
 		no_cy = 0
-		if bit1 == 1 and bit2 == 0:
+		if (bit1 == 1 or bit1 ==2) and bit2 == 0:
 			no_cy = 11
-		elif bit1 == 0 and bit2 == 1:
+		elif bit1 == 0 and (bit2 == 1 or bit2 == 2):
 			no_cy = 12
-		elif bit1 == 1 and bit2 == 1:
+		elif (bit1 == 1 and bit2 == 1) or (bit1 == 2 and bit2 == 2):
 			no_cy = 1112
 
-		if bit3 == 1 and bit4 == 0:
+		if (bit3 == 1 or bit3 == 2) and bit4 == 0:
 			no_cy = 21
-		elif bit3 == 0 and bit4 == 1:
+		elif bit3 == 0 and (bit4 == 1 or bit4 == 2):
 			no_cy = 22
-		elif bit3 == 1 and bit4 == 1:
+		elif (bit3 == 1 and bit4 == 1) or (bit3 == 2 and bit4 == 2):
 			no_cy = 2122
 
-		if bit1 == 0 and bit2 == 0 and bit3 == 0 and bit4 == 0:
+		if no_cy == 0:
 			print("Ko kết nối băng tải - Gửi lệnh các băng tải dừng hết")
 		else:
 			print("Ko kết nối băng tải - Đang gửi lệnh cho băng tải ", str(no_cy))
@@ -1383,6 +1427,36 @@ class ros_control():
 		self.control_conveyors.No3_mission = bit3
 		self.control_conveyors.No4_mission = bit4
 
+	def AutoCY_runtask(self):
+		if self.case_task == 1 and self.case_step == 0:                     # Nhận hàng ở kho Modula
+			self.AGVToyo_signal.signal_toyoBit5_connected = 1
+			if self.signal_ConveyorToyo.signal_toyoBit5_connected == 1:     # Conveyor xác nhận vị trí với AGV
+				self.case_step = 1
+			else:
+				self.flag_CYmachine_posError = 1
+				print("AutoMode -> Ko phát hiện vị trí của băng tải máy ")
+		
+		elif self.case_task == 1 and self.case_step == 1:                   # cấp quyền cho băng tải chạy
+			self.AGVToyo_signal.signal_toyoBit7_ready = 0                   # AGV đã sẵn sàng nhận hàng
+			if self.signal_ConveyorToyo.signal_toyoBit1 == 1:
+				self.control_conveyors.No1_mission = self.CYTask_receive
+				self.control_conveyors.No2_mission = self.CYTask_receive
+
+			if self.signal_conveyor11.status == 255:
+				self.control_conveyors.No1_mission = self.CYTask_stop
+				self.control_conveyors.No2_mission = self.CYTask_stop
+				self.flagWarning_receivedRack11 = 1
+
+			elif self.signal_conveyor11.status == self.CYTask_done:
+				self.control_conveyors.No1_mission = self.CYTask_stop
+				self.control_conveyors.No2_mission = self.CYTask_stop
+				self.AGVToyo_signal.signal_toyoBit6_done = 1
+
+			if self.signal_conveyor12.status == 255:
+				self.control_conveyors.No1_mission = self.CYTask_stop
+				self.control_conveyors.No2_mission = self.CYTask_stop
+				self.flagWarning_receivedRack12 = 1	
+			
 	def run(self):
 		while not rospy.is_shutdown():
 			# ------ 
@@ -1404,10 +1478,10 @@ class ros_control():
 
 			elif count_error == 0 and count_warning > 0:
 				self.flag_error = 0
-				self.flag_warning = 0                    # = 1: Archie add 5/1/2023
+				self.flag_warning = 1                    # = 1: Archie add 5/1/2023
 
 			else:
-				self.flag_error = 0                      # = 1: Archie add 5/1/2023
+				self.flag_error = 1                      # = 1: Archie add 5/1/2023
 				self.flag_warning = 0
 
 			# -- 
@@ -1438,17 +1512,17 @@ class ros_control():
 				# print ("Run Reset: " + str(self.app_button.bt_clearError) + " | " + str(self.main_info.stsButton_reset))
 				
 				# -- Xóa lỗi băng tải.
-				if self.signal_conveyor12.status > 125:
-					self.control_conveyors.No3_mission = 0
-
-				if self.signal_conveyor22.status > 125:
-					self.control_conveyors.No4_mission = 0
-
 				if self.signal_conveyor11.status > 125:
 					self.control_conveyors.No5_mission = 0
 
 				if self.signal_conveyor21.status > 125:
 					self.control_conveyors.No6_mission = 0
+
+				if self.signal_conveyor12.status > 125:
+					self.control_conveyors.No3_mission = 0
+
+				if self.signal_conveyor22.status > 125:
+					self.control_conveyors.No4_mission = 0
 
 				# -- add 22/01/2022
 				self.flag_notCharger = 0
@@ -1466,8 +1540,16 @@ class ros_control():
 				self.flag_CYmachine_generalError = 0
 				self.flag_CYmachine_posError = 0
 				self.flag_CYmachine_readyError = 0
-				self.AGVToyo_signal.signal_toyoBit5_connected = 0
 
+				# - 
+				self.flag_CY11_pushError_Blank = 0
+				self.flag_CY11_receiveError_Full = 0
+				self.flag_CY12_pushError_Blank = 0
+				self.flag_CY12_receiveError_Full = 0
+				self.flag_CY21_pushError_Blank = 0
+				self.flag_CY21_receiveError_Full = 0
+				self.flag_CY22_pushError_Blank = 0
+				self.flag_CY22_receiveError_Full = 0
 
 			else:
 				self.task_driver.data = self.taskDriver_Read
@@ -1583,28 +1665,103 @@ class ros_control():
 					self.resetCY_signal()
 					self.btValue_linkCY = self.app_button.bt_linkConveyor					
 
-				if self.app_button.bt_linkConveyor == 1:
+				if self.app_button.bt_linkConveyor == 1:                         
 					if self.signal_ConveyorToyo.signal_toyoBit8_error == 0:
 						# --
-						if self.signal_conveyor11.status == self.CYTask_undone and self.signal_conveyor12.status == self.CYTask_undone and self.signal_conveyor21.status == self.CYTask_undone and self.signal_conveyor22.status == self.CYTask_undone:
-							# -11
-							if self.conveyor11_taskByHand == self.CYTask_received and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:
-								self.ManualCY_link_undone(1,0,0,0, 1,0,0,0)
+						if self.signal_conveyor11.status != self.CYTask_done and self.signal_conveyor12.status != self.CYTask_done and self.signal_conveyor21.status != self.CYTask_done and self.signal_conveyor22.status != self.CYTask_done:
+							# -- CY RECEIVE 11
+							if self.conveyor11_taskByHand == self.CYTask_receive and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:
+								if self.signal_conveyor11.signal_limitAhead == 0 and self.signal_conveyor11.signal_limitBehind == 0 and self.signal_conveyor11.signal_ssCheckTray == 0:
+									self.ManualCY_link_undone(0, 1,0,0,0, 1,0,0,0)
+								else:
+									print("Liên kết băng tải, Trên băng tải 11 đã có thùng hàng")
+									self.flag_CY11_receiveError_Full = 1
 							# - 12
-							elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_received and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:
-								self.ManualCY_link_undone(0,1,0,0, 0,1,0,0)
+							elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_receive and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:
+								if self.signal_conveyor12.signal_limitAhead == 0 and self.signal_conveyor12.signal_limitBehind == 0 and self.signal_conveyor12.signal_ssCheckTray == 0:
+									self.ManualCY_link_undone(0, 0,1,0,0, 0,1,0,0)
+								else:
+									print("Liên kết băng tải, Trên băng tải 12 đã có thùng hàng")
+									self.flag_CY12_receiveError_Full = 1
 							# - 1st floor 11 - 12
-							elif self.conveyor11_taskByHand == self.CYTask_received and self.conveyor12_taskByHand == self.CYTask_received and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:
-								self.ManualCY_link_undone(1,1,0,0, 1,1,0,0)
+							elif self.conveyor11_taskByHand == self.CYTask_receive and self.conveyor12_taskByHand == self.CYTask_receive and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:
+								if self.signal_conveyor11.signal_limitAhead == 0 and self.signal_conveyor11.signal_limitBehind == 0 and self.signal_conveyor11.signal_ssCheckTray == 0 and \
+										self.signal_conveyor12.signal_limitAhead == 0 and self.signal_conveyor12.signal_limitBehind == 0 and self.signal_conveyor12.signal_ssCheckTray == 0:
+									self.ManualCY_link_undone(0, 1,1,0,0, 1,1,0,0)
+								else:
+									print("Liên kết băng tải, Trên tầng 1 đã có thùng")
+									self.flag_CY11_receiveError_Full = 1
+									self.flag_CY12_receiveError_Full = 1
 							# - 21
-							elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_received and self.conveyor22_taskByHand == self.CYTask_stop:
-								self.ManualCY_link_undone(0,0,1,0, 0,0,1,0)
+							elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_receive and self.conveyor22_taskByHand == self.CYTask_stop:
+								if self.signal_conveyor21.signal_limitAhead == 0 and self.signal_conveyor21.signal_limitBehind == 0 and self.signal_conveyor21.signal_ssCheckTray == 0:
+									self.ManualCY_link_undone(0, 0,0,1,0, 0,0,1,0)
+								else:
+									print("Liên kết băng tải, Trên băng tải 21 đã có thùng hàng")
+									self.flag_CY21_receiveError_Full = 1
 							# - 22
-							elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_received:
-								self.ManualCY_link_undone(0,0,0,1, 0,0,0,1)
+							elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_receive:
+								if self.signal_conveyor22.signal_limitAhead == 0 and self.signal_conveyor22.signal_limitBehind == 0 and self.signal_conveyor22.signal_ssCheckTray == 0:
+									self.ManualCY_link_undone(0, 0,0,0,1, 0,0,0,1)
+								else:
+									print("Liên kết băng tải, Trên băng tải 22 đã có thùng hàng")
+									self.flag_CY12_receiveError_Full = 1
 							# - 2nd floor - 21 - 22
-							elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_received and self.conveyor22_taskByHand == self.CYTask_received:
-								self.ManualCY_link_undone(0,0,1,1, 0,0,1,1)
+							elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_receive and self.conveyor22_taskByHand == self.CYTask_receive:
+								if self.signal_conveyor21.signal_limitAhead == 0 and self.signal_conveyor21.signal_limitBehind == 0 and self.signal_conveyor21.signal_ssCheckTray == 0 and \
+										self.signal_conveyor22.signal_limitAhead == 0 and self.signal_conveyor22.signal_limitBehind == 0 and self.signal_conveyor22.signal_ssCheckTray == 0:								
+									self.ManualCY_link_undone(0, 0,0,1,1, 0,0,1,1)
+								else:
+									print("Liên kết băng tải, Trên tầng 2 đã có thùng")
+									self.flag_CY21_receiveError_Full = 1
+									self.flag_CY22_receiveError_Full = 1
+
+							# -- CY PUSH 11
+							if self.conveyor11_taskByHand == self.CYTask_push and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:
+								if self.signal_conveyor11.signal_limitAhead == 1 and self.signal_conveyor11.signal_limitBehind == 1 and self.signal_conveyor11.signal_ssCheckTray == 1:								
+									self.ManualCY_link_undone(1, 1,0,0,0, 2,0,0,0)
+								else:
+									print("Liên kết băng tải, Trên băng tải 11 không có thùng hàng")
+									self.flag_CY11_pushError_Blank = 1
+							# - 12
+							elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_push and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:
+								if self.signal_conveyor12.signal_limitAhead == 1 and self.signal_conveyor12.signal_limitBehind == 1 and self.signal_conveyor12.signal_ssCheckTray == 1:								
+									self.ManualCY_link_undone(1, 0,1,0,0, 0,2,0,0)
+								else:
+									print("Liên kết băng tải, Trên băng tải 12 không có thùng hàng")
+									self.flag_CY12_pushError_Blank = 1
+							# - 1st floor 11 - 12
+							elif self.conveyor11_taskByHand == self.CYTask_push and self.conveyor12_taskByHand == self.CYTask_push and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:
+								if self.signal_conveyor11.signal_limitAhead == 1 and self.signal_conveyor11.signal_limitBehind == 1 and self.signal_conveyor11.signal_ssCheckTray == 1 and \
+										self.signal_conveyor12.signal_limitAhead == 1 and self.signal_conveyor12.signal_limitBehind == 1 and self.signal_conveyor12.signal_ssCheckTray == 1:
+									self.ManualCY_link_undone(1, 1,1,0,0, 2,2,0,0)
+								else:
+									print("Liên kết băng tải, Trên tầng 1 không có thùng hàng")
+									self.flag_CY11_pushError_Blank = 1
+									self.flag_CY12_pushError_Blank = 1
+							# - 21
+							elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_push and self.conveyor22_taskByHand == self.CYTask_stop:
+								if self.signal_conveyor21.signal_limitAhead == 1 and self.signal_conveyor21.signal_limitBehind == 1 and self.signal_conveyor21.signal_ssCheckTray == 1:								
+									self.ManualCY_link_undone(1, 0,0,1,0, 0,0,2,0)
+								else:
+									print("Liên kết băng tải, Trên băng tải 21 không có thùng hàng")
+									self.flag_CY21_pushError_Blank = 1
+							# - 22
+							elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_push:
+								if self.signal_conveyor22.signal_limitAhead == 1 and self.signal_conveyor22.signal_limitBehind == 1 and self.signal_conveyor22.signal_ssCheckTray == 1:								
+									self.ManualCY_link_undone(1, 0,0,0,1, 0,0,0,2)
+								else:
+									print("Liên kết băng tải, Trên băng tải 22 không có thùng hàng")
+									self.flag_CY22_pushError_Blank = 1
+							# - 2nd floor - 21 - 22
+							elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_push and self.conveyor22_taskByHand == self.CYTask_push:
+								if self.signal_conveyor21.signal_limitAhead == 1 and self.signal_conveyor21.signal_limitBehind == 1 and self.signal_conveyor21.signal_ssCheckTray == 1 and \
+										self.signal_conveyor22.signal_limitAhead == 1 and self.signal_conveyor22.signal_limitBehind == 1 and self.signal_conveyor22.signal_ssCheckTray == 1:								
+									self.ManualCY_link_undone(1, 0,0,1,1, 0,0,2,2)
+								else:
+									print("Liên kết băng tải, Trên tầng 2 không có thùng hàng")
+									self.flag_CY21_pushError_Blank = 1
+									self.flag_CY22_pushError_Blank = 1
 
 							elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:
 								# - reset toyo signal -- 
@@ -1615,6 +1772,7 @@ class ros_control():
 								self.AGVToyo_signal.signal_toyoBit4 = 0
 								self.AGVToyo_signal.signal_toyoBit5_connected = 0
 								self.AGVToyo_signal.signal_toyoBit6_done = 0       # need chỉnh lại thông số này
+								self.AGVToyo_signal.signal_toyoBit7_ready = 0
 
 								self.control_conveyors.No1_mission = self.CYTask_stop
 								self.control_conveyors.No2_mission = self.CYTask_stop
@@ -1622,20 +1780,22 @@ class ros_control():
 								self.control_conveyors.No4_mission = self.CYTask_stop								
 
 						else:
-
-							if self.conveyor11_taskByHand == self.CYTask_received and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:						
+							# -
+							if (self.conveyor11_taskByHand == self.CYTask_receive or self.conveyor11_taskByHand == self.CYTask_push) and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:						
 								print("Liên kết băng tải, Băng tải 11 chạy xong >> Dừng")
 								self.AGVToyo_signal.signal_toyoBit6_done = 1
+								self.AGVToyo_signal.signal_toyoBit7_ready = 0
 								self.control_conveyors.No1_mission = self.CYTask_stop
 								self.conveyor11_taskByHand = self.CYTask_stop
 
-							elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_received and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:						
+							elif self.conveyor11_taskByHand == self.CYTask_stop and (self.conveyor12_taskByHand == self.CYTask_receive or self.conveyor11_taskByHand == self.CYTask_push) and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:						
 								print("Liên kết băng tải, Băng tải 12 chạy xong >> Dừng")
 								self.AGVToyo_signal.signal_toyoBit6_done = 1
+								self.AGVToyo_signal.signal_toyoBit7_ready = 0
 								self.control_conveyors.No2_mission = self.CYTask_stop
 								self.conveyor12_taskByHand = self.CYTask_stop
 
-							elif self.conveyor11_taskByHand == self.CYTask_received and self.conveyor12_taskByHand == self.CYTask_received and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:						
+							elif self.conveyor11_taskByHand == self.CYTask_receive and self.conveyor12_taskByHand == self.CYTask_receive and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:						
 								print("Liên kết băng tải, Băng tải tầng 1 chạy xong >> Dừng")
 								self.AGVToyo_signal.signal_toyoBit6_done = 1
 								self.control_conveyors.No1_mission = self.CYTask_stop
@@ -1643,21 +1803,41 @@ class ros_control():
 								self.conveyor11_taskByHand = self.CYTask_stop
 								self.conveyor12_taskByHand = self.CYTask_stop
 
-							elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_received and self.conveyor22_taskByHand == self.CYTask_stop:						
+							elif self.conveyor11_taskByHand == self.CYTask_push and self.conveyor12_taskByHand == self.CYTask_push and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:						
+								print("Liên kết băng tải, Băng tải tầng 1 chạy xong >> Dừng")
+								self.AGVToyo_signal.signal_toyoBit6_done = 1
+								self.AGVToyo_signal.signal_toyoBit7_ready = 0
+								self.control_conveyors.No1_mission = self.CYTask_stop
+								self.control_conveyors.No2_mission = self.CYTask_stop
+								self.conveyor11_taskByHand = self.CYTask_stop
+								self.conveyor12_taskByHand = self.CYTask_stop
+							# -
+							elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and (self.conveyor21_taskByHand == self.CYTask_receive or self.conveyor21_taskByHand == self.CYTask_push) and self.conveyor22_taskByHand == self.CYTask_stop:						
 								print("Liên kết băng tải, Băng tải 21 chạy xong >> Dừng")
 								self.AGVToyo_signal.signal_toyoBit6_done = 1
+								self.AGVToyo_signal.signal_toyoBit7_ready = 0
 								self.control_conveyors.No3_mission = self.CYTask_stop
 								self.conveyor21_taskByHand = self.CYTask_stop
 
-							elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_received:						
+							elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_stop and (self.conveyor22_taskByHand == self.CYTask_receive or self.conveyor21_taskByHand == self.CYTask_push):						
 								print("Liên kết băng tải, Băng tải 22 chạy xong >> Dừng")
 								self.AGVToyo_signal.signal_toyoBit6_done = 1
+								self.AGVToyo_signal.signal_toyoBit7_ready = 0
 								self.control_conveyors.No4_mission = self.CYTask_stop
 								self.conveyor22_taskByHand = self.CYTask_stop
 
-							elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_received and self.conveyor22_taskByHand == self.CYTask_received:						
+							elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_receive and self.conveyor22_taskByHand == self.CYTask_receive:						
 								print("Liên kết băng tải, Băng tải tầng 2 chạy xong >> Dừng")
 								self.AGVToyo_signal.signal_toyoBit6_done = 1
+								self.control_conveyors.No3_mission = self.CYTask_stop
+								self.control_conveyors.No4_mission = self.CYTask_stop
+								self.conveyor21_taskByHand = self.CYTask_stop
+								self.conveyor22_taskByHand = self.CYTask_stop
+
+							elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_push and self.conveyor22_taskByHand == self.CYTask_push:						
+								print("Liên kết băng tải, Băng tải tầng 2 chạy xong >> Dừng")
+								self.AGVToyo_signal.signal_toyoBit6_done = 1
+								self.AGVToyo_signal.signal_toyoBit7_ready = 0
 								self.control_conveyors.No3_mission = self.CYTask_stop
 								self.control_conveyors.No4_mission = self.CYTask_stop
 								self.conveyor21_taskByHand = self.CYTask_stop
@@ -1670,7 +1850,8 @@ class ros_control():
 								self.AGVToyo_signal.signal_toyoBit3 = 0
 								self.AGVToyo_signal.signal_toyoBit4 = 0
 								self.AGVToyo_signal.signal_toyoBit5_connected = 0
-								self.AGVToyo_signal.signal_toyoBit6_done = 0       # need chỉnh lại thông số này
+								self.AGVToyo_signal.signal_toyoBit6_done = 0              # need chỉnh lại thông số này
+								self.AGVToyo_signal.signal_toyoBit7_ready = 0
 
 								self.control_conveyors.No1_mission = self.CYTask_stop
 								self.control_conveyors.No2_mission = self.CYTask_stop
@@ -1691,34 +1872,109 @@ class ros_control():
 					self.AGVToyo_signal.signal_toyoBit6_done = 0 
 					self.AGVToyo_signal.signal_toyoBit7_ready = 0 
 
-					if self.signal_conveyor11.status == self.CYTask_undone and self.signal_conveyor12.status == self.CYTask_undone and self.signal_conveyor21.status == self.CYTask_undone and self.signal_conveyor22.status == self.CYTask_undone:
-						if self.conveyor11_taskByHand == self.CYTask_received and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:
-							self.ManualCY_unlink_undone(1,0,0,0)
+					if self.signal_conveyor11.status != self.CYTask_done and self.signal_conveyor12.status != self.CYTask_done and self.signal_conveyor21.status != self.CYTask_done and self.signal_conveyor22.status != self.CYTask_done:
+						# -- 
+						if self.conveyor11_taskByHand == self.CYTask_receive and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:
+							if self.signal_conveyor11.signal_limitAhead == 0 and self.signal_conveyor11.signal_limitBehind == 0 and self.signal_conveyor11.signal_ssCheckTray == 0:
+								self.ManualCY_unlink_undone(1,0,0,0)
+							else:
+								print("Ko kết nối băng tải - Trên băng tải 11 đã có thùng hàng")
+								self.flag_CY11_receiveError_Full = 1
+
+						elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_receive and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:
+							if self.signal_conveyor12.signal_limitAhead == 0 and self.signal_conveyor12.signal_limitBehind == 0 and self.signal_conveyor12.signal_ssCheckTray == 0:
+								self.ManualCY_unlink_undone(0,1,0,0)
+							else:
+								print("Ko kết nối băng tải - Trên băng tải 12 đã có thùng hàng")
+								self.flag_CY12_receiveError_Full = 1
+
+						elif self.conveyor11_taskByHand == self.CYTask_receive and self.conveyor12_taskByHand == self.CYTask_receive and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:
+							if self.signal_conveyor11.signal_limitAhead == 0 and self.signal_conveyor11.signal_limitBehind == 0 and self.signal_conveyor11.signal_ssCheckTray == 0 and \
+									self.signal_conveyor12.signal_limitAhead == 0 and self.signal_conveyor12.signal_limitBehind == 0 and self.signal_conveyor12.signal_ssCheckTray == 0:
+								self.ManualCY_unlink_undone(1,1,0,0)
+							else:
+								print("Ko kết nối băng tải - Trên tầng 1 đã có thùng")
+								self.flag_CY11_receiveError_Full = 1
+								self.flag_CY12_receiveError_Full = 1							
+						# --
+						elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_receive and self.conveyor22_taskByHand == self.CYTask_stop:
+							if self.signal_conveyor21.signal_limitAhead == 0 and self.signal_conveyor21.signal_limitBehind == 0 and self.signal_conveyor21.signal_ssCheckTray == 0:
+								self.ManualCY_unlink_undone(0,0,1,0)
+							else:
+								print("Ko kết nối băng tải - Trên băng tải 21 đã có thùng hàng")
+								self.flag_CY21_receiveError_Full = 1							
+
+						elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_receive:
+							if self.signal_conveyor22.signal_limitAhead == 0 and self.signal_conveyor22.signal_limitBehind == 0 and self.signal_conveyor22.signal_ssCheckTray == 0:
+								self.ManualCY_unlink_undone(0,0,0,1)
+							else:
+								print("Ko kết nối băng tải - Trên băng tải 22 đã có thùng hàng")
+								self.flag_CY22_receiveError_Full = 1							
+
+						elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_receive and self.conveyor22_taskByHand == self.CYTask_receive:
+							if self.signal_conveyor21.signal_limitAhead == 0 and self.signal_conveyor21.signal_limitBehind == 0 and self.signal_conveyor21.signal_ssCheckTray == 0 and \
+									self.signal_conveyor22.signal_limitAhead == 0 and self.signal_conveyor22.signal_limitBehind == 0 and self.signal_conveyor22.signal_ssCheckTray == 0:								
+								self.ManualCY_unlink_undone(0,0,1,1)
+							else:
+								print("Ko kết nối băng tải - Trên tầng 2 đã có thùng")
+								self.flag_CY21_receiveError_Full = 1
+								self.flag_CY22_receiveError_Full = 1							
+						# --
+						if self.conveyor11_taskByHand == self.CYTask_push and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:
+							if self.signal_conveyor11.signal_limitAhead == 1 and self.signal_conveyor11.signal_limitBehind == 1 and self.signal_conveyor11.signal_ssCheckTray == 1:								
+								self.ManualCY_unlink_undone(2,0,0,0)
+							else:
+								print("Ko kết nối băng tải - Trên băng tải 11 không có thùng hàng")
+								self.flag_CY11_pushError_Blank = 1							
 							
-						elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_received and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:
-							self.ManualCY_unlink_undone(0,1,0,0)
+						elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_push and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:
+							if self.signal_conveyor12.signal_limitAhead == 1 and self.signal_conveyor12.signal_limitBehind == 1 and self.signal_conveyor12.signal_ssCheckTray == 1:								
+								self.ManualCY_unlink_undone(0,2,0,0)
+							else:
+								print("Ko kết nối băng tải - Trên băng tải 12 không có thùng hàng")
+								self.flag_CY12_pushError_Blank = 1							
 
-						elif self.conveyor11_taskByHand == self.CYTask_received and self.conveyor12_taskByHand == self.CYTask_received and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:
-							self.ManualCY_unlink_undone(1,1,0,0)
-						# --
-						elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_received and self.conveyor22_taskByHand == self.CYTask_stop:
-							self.ManualCY_unlink_undone(0,0,1,0)
+						elif self.conveyor11_taskByHand == self.CYTask_push and self.conveyor12_taskByHand == self.CYTask_push and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:
+							if self.signal_conveyor11.signal_limitAhead == 1 and self.signal_conveyor11.signal_limitBehind == 1 and self.signal_conveyor11.signal_ssCheckTray == 1 and \
+									self.signal_conveyor12.signal_limitAhead == 1 and self.signal_conveyor12.signal_limitBehind == 1 and self.signal_conveyor12.signal_ssCheckTray == 1:
+								self.ManualCY_unlink_undone(2,2,0,0)
+							else:
+								print("Ko kết nối băng tải - Trên tầng 1 không có thùng hàng")
+								self.flag_CY11_pushError_Blank = 1
+								self.flag_CY12_pushError_Blank = 1							
+						# -- 
+						elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_receive and self.conveyor22_taskByHand == self.CYTask_stop:
+							if self.signal_conveyor21.signal_limitAhead == 1 and self.signal_conveyor21.signal_limitBehind == 1 and self.signal_conveyor21.signal_ssCheckTray == 1:								
+								self.ManualCY_unlink_undone(0,0,2,0)
+							else:
+								print("Ko kết nối băng tải - Trên băng tải 21 không có thùng hàng")
+								self.flag_CY21_pushError_Blank = 1							
 
-						elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_received:
-							self.ManualCY_unlink_undone(0,0,0,1)
+						elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_receive:
+							if self.signal_conveyor22.signal_limitAhead == 1 and self.signal_conveyor22.signal_limitBehind == 1 and self.signal_conveyor22.signal_ssCheckTray == 1:								
+								self.ManualCY_unlink_undone(0,0,0,2)
+							else:
+								print("Ko kết nối băng tải - Trên băng tải 22 không có thùng hàng")
+								self.flag_CY22_pushError_Blank = 1						
 
-						elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_received and self.conveyor22_taskByHand == self.CYTask_received:
-							self.ManualCY_unlink_undone(0,0,1,1)
-						# --
+						elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_receive and self.conveyor22_taskByHand == self.CYTask_receive:
+							if self.signal_conveyor21.signal_limitAhead == 1 and self.signal_conveyor21.signal_limitBehind == 1 and self.signal_conveyor21.signal_ssCheckTray == 1 and \
+									self.signal_conveyor22.signal_limitAhead == 1 and self.signal_conveyor22.signal_limitBehind == 1 and self.signal_conveyor22.signal_ssCheckTray == 1:								
+								self.ManualCY_unlink_undone(0,0,2,2)
+							else:
+								print("Ko kết nối băng tải - Trên tầng 2 không có thùng hàng")
+								self.flag_CY21_pushError_Blank = 1	
+								self.flag_CY22_pushError_Blank = 1								
+						# -- 
 						elif self.conveyor11_taskByHand == self.CYTask_stop and self.conveyor12_taskByHand == self.CYTask_stop and self.conveyor21_taskByHand == self.CYTask_stop and self.conveyor22_taskByHand == self.CYTask_stop:
 							self.ManualCY_unlink_undone(0,0,0,0)												
 
 					else:
 						self.ManualCY_unlink_undone(0,0,0,0)
-						self.conveyor11_taskByHand = 0
-						self.conveyor12_taskByHand = 0
-						self.conveyor21_taskByHand = 0
-						self.conveyor22_taskByHand = 0
+						self.conveyor11_taskByHand = self.CYTask_stop
+						self.conveyor12_taskByHand = self.CYTask_stop
+						self.conveyor21_taskByHand = self.CYTask_stop
+						self.conveyor22_taskByHand = self.CYTask_stop
 
 			# ------------ Speaker ------------ #
 				# -- Speaker
@@ -1763,32 +2019,48 @@ class ros_control():
 					condition_No3 = 0
 					condition_No4 = 0
 					# -
-					condition_No1_12 = 0
-					condition_No1_34 = 0
-					condition_No1_56 = 0
+					condition_No11 = 0
+					condition_No12 = 0
+					condition_No21 = 0
+					condition_No22 = 0
 					
 					# -
-					if (self.signal_conveyor12.status == 1 or self.signal_conveyor12.status == 2 or self.signal_conveyor22.status == 1 or self.signal_conveyor22.status == 2):
-						condition_No1_34 = 1
+					if self.signal_conveyor11.status == 1 or self.signal_conveyor11.status == 2: 
+						condition_No11 = 1
 					# -
-					if (self.signal_conveyor11.status == 1 or self.signal_conveyor11.status == 2 or self.signal_conveyor21.status == 1 or self.signal_conveyor21.status == 2):
-						condition_No1_56 = 1
-
+					if self.signal_conveyor12.status == 1 or self.signal_conveyor12.status == 2:
+						condition_No12 = 1
+					# -
+					if self.signal_conveyor21.status == 1 or self.signal_conveyor21.status == 2: 
+						condition_No21 = 1
+					# -
+					if self.signal_conveyor22.status == 1 or self.signal_conveyor22.status == 2:
+						condition_No22 = 1
+	
 					# -- add 17/03/2023: Lỗi AGV di chuyển khi thùng chưa sang hẳn (quy trình nhận thùng)
-					if self.signal_conveyor12.status == 254 or self.signal_conveyor12.status == 255 or self.signal_conveyor22.status == 254 or self.signal_conveyor22.status == 255:
-						condition_No1_34 = 1
+					if self.signal_conveyor11.status == 254 or self.signal_conveyor11.status == 255:
+						condition_No11 = 1
 					# -
-					if self.signal_conveyor11.status == 254 or self.signal_conveyor11.status == 255 or self.signal_conveyor21.status == 254 or self.signal_conveyor21.status == 255:
-						condition_No1_56 = 1
+					if self.signal_conveyor12.status == 254 or self.signal_conveyor12.status == 255:
+						condition_No12 = 1
+					# -
+					if self.signal_conveyor21.status == 254 or self.signal_conveyor21.status == 255:
+						condition_No21 = 1
+					# -
+					if self.signal_conveyor22.status == 254 or self.signal_conveyor22.status == 255:
+						condition_No22 = 1
 
 					# -- add 19/06/2023: Lỗi AGV di chuyển khi thùng chưa sang hẳn (Do cảm biến bị nhiễu -> AGV nhận lỗi)
-					if self.flagWarning_receivedRack11 == 1 or self.flagWarning_receivedRack21 == 1:
-						condition_No1_12 = 1
+					if self.flagWarning_receivedRack11 == 1:
+						condition_No11 = 1
+					if self.flagWarning_receivedRack12 == 1:
+						condition_No12 = 1
+					if self.flagWarning_receivedRack21 == 1:
+						condition_No21 = 1
+					if self.flagWarning_receivedRack22 == 1:
+						condition_No22 = 1
 
-					if self.flagWarning_receivedRack12 == 1 or self.flagWarning_receivedRack22 == 1:
-						condition_No1_34 = 1
-
-					condition_No1 = condition_No1_12 + condition_No1_34 + condition_No1_56
+					condition_No1 = condition_No11 + condition_No12 + condition_No21 + condition_No22
 
 					# - 2, Đang Parking: Vào sạc.
 					if self.navigation_respond.modeMove == 2 and self.navigation_respond.status == 1 and self.navigation_respond.completed == 0:
@@ -1812,7 +2084,7 @@ class ros_control():
 					# --
 					self.Traffic_infoRespond.offset = 0
 
-				else:
+				else:      # Archie: Bỏ qua case này. 
 					# - Nếu target ID ko đổi mà nhiện vụ muốn thay đổi (lấy hoặc trả hàng luôn tại đó).
 					if self.completed_after_mission == 1:
 						if self.mission_after != self.server_cmdRequest.after_mission:
@@ -1994,158 +2266,37 @@ class ros_control():
 							# -
 							self.poseCharger.position.x = self.robotPose_nav.pose.position.x
 							self.poseCharger.position.y = self.robotPose_nav.pose.position.y
+					
 					else:
-						if self.mission_before == 0: # - Nhận hàng.
-							self.enable_moving = 1
+						self.enable_moving = 1
 
-							self.navigation_query.modeMove = 5
-							# -
-							# self.navigation_query.GoalID = self.serverCmd_now.target_id
-							# self.navigation_query.GoalX  = self.serverCmd_now.target_x
-							# self.navigation_query.GoalY  = self.serverCmd_now.target_y
-							# self.navigation_query.GoalAngle = self.serverCmd_now.target_z
-							# --
-							self.serverCmd_now = self.server_cmdRequest
-							# -
-							self.navigation_query.GoalID = self.serverCmd_now.target_id
-							self.navigation_query.GoalX  = self.serverCmd_now.target_x
-							self.navigation_query.GoalY  = self.serverCmd_now.target_y
-							self.navigation_query.GoalAngle = self.serverCmd_now.target_z
-							# --
-							self.navigation_query.listID = self.serverCmd_now.list_id
-							self.navigation_query.listX  = self.serverCmd_now.list_x
-							self.navigation_query.listY  = self.serverCmd_now.list_y
-							self.navigation_query.listSpeed = self.serverCmd_now.list_speed
-							self.navigation_query.listDirectionTravel = self.serverCmd_now.list_directionTravel
-							self.navigation_query.listAngleLine  = self.serverCmd_now.list_angleLine
-							self.navigation_query.listRoadWidth  = self.serverCmd_now.list_roadWidth
-							self.navigation_query.listAngleFinal = self.serverCmd_now.list_angleFinal
-							# - 
-							if self.navigation_respond.modeMove == 5 and self.navigation_respond.completed == 1:
-								self.completed_moveSpecial = 1
-								self.enable_moving = 0
-								
-						else: # - Trả hàng.
-							if self.mission_after == 3 or self.mission_after == 5: # - Trả băng tải: tầng 2 ở giữa AGV (No.22) Hoặc tầng 1 ở cuối AGV (No.13).
-								self.enable_moving = 1
-
-								self.navigation_query.modeMove = 5
-								# --
-								self.serverCmd_now = self.server_cmdRequest
-								# -
-								self.navigation_query.GoalID = self.serverCmd_now.target_id
-								self.navigation_query.GoalX  = self.serverCmd_now.target_x
-								self.navigation_query.GoalY  = self.serverCmd_now.target_y
-								self.navigation_query.GoalAngle = self.serverCmd_now.target_z
-								# --
-								self.navigation_query.listID = self.serverCmd_now.list_id
-								self.navigation_query.listX  = self.serverCmd_now.list_x
-								self.navigation_query.listY  = self.serverCmd_now.list_y
-								self.navigation_query.listSpeed = self.serverCmd_now.list_speed
-								self.navigation_query.listDirectionTravel = self.serverCmd_now.list_directionTravel
-								self.navigation_query.listAngleLine  = self.serverCmd_now.list_angleLine
-								self.navigation_query.listRoadWidth  = self.serverCmd_now.list_roadWidth
-								self.navigation_query.listAngleFinal = self.serverCmd_now.list_angleFinal
-								# - Archie: AGV went to Working point 
-								if self.navigation_respond.modeMove == 5 and self.navigation_respond.completed == 1:
-									self.completed_moveSpecial = 1
-									self.enable_moving = 0
-
-							elif self.mission_after == 2 or self.mission_after == 4: # - Tiến lên 1 nấc.
-								self.enable_moving = 1
-
-								self.navigation_query.modeMove = 5
-								# -
-								self.serverCmd_now = self.server_cmdRequest
-								# -
-								angle_2 = self.serverCmd_now.target_z + pi
-								angle_2 = self.limitAngle(angle_2)
-								# -
-								self.goalTarget.pose = self.getPose_from_offset(self.serverCmd_now.target_x, self.serverCmd_now.target_y, angle_2, self.serverCmd_now.offset)
-								# - 
-								self.navigation_query.GoalID = self.serverCmd_now.target_id
-								self.navigation_query.GoalX  = self.goalTarget.pose.position.x
-								self.navigation_query.GoalY  = self.goalTarget.pose.position.y
-								self.navigation_query.GoalAngle = self.serverCmd_now.target_z
-								# --
-								self.navigation_query.listID = self.serverCmd_now.list_id
-								self.navigation_query.listX  = self.serverCmd_now.list_x
-								self.navigation_query.listY  = self.serverCmd_now.list_y
-								self.navigation_query.listSpeed = self.serverCmd_now.list_speed
-								self.navigation_query.listDirectionTravel = self.serverCmd_now.list_directionTravel
-								self.navigation_query.listAngleLine  = self.serverCmd_now.list_angleLine
-								self.navigation_query.listRoadWidth  = self.serverCmd_now.list_roadWidth
-								self.navigation_query.listAngleFinal = self.serverCmd_now.list_angleFinal
-								# - 
-								if self.navigation_respond.modeMove == 5 and self.navigation_respond.completed == 1:
-									self.completed_moveSpecial = 1
-									self.enable_moving = 0
-
-							elif self.mission_after == 6: # - Lùi lại 1 nấc.
-								self.enable_moving = 1
-
-								self.navigation_query.modeMove = 5
-								# -
-								self.serverCmd_now = self.server_cmdRequest
-								# -
-								# angle_2 = self.serverCmd_now.target_z
-								# angle_2 = self.limitAngle(angle_2)
-								self.goalTarget.pose = self.getPose_from_offset(self.serverCmd_now.target_x, self.serverCmd_now.target_y, self.serverCmd_now.target_z, self.serverCmd_now.offset)
-								# - 
-								self.navigation_query.GoalID = self.serverCmd_now.target_id
-								self.navigation_query.GoalX  = self.goalTarget.pose.position.x
-								self.navigation_query.GoalY  = self.goalTarget.pose.position.y
-								self.navigation_query.GoalAngle = self.serverCmd_now.target_z
-								# --
-								self.navigation_query.listID = self.serverCmd_now.list_id
-								self.navigation_query.listX  = self.serverCmd_now.list_x
-								self.navigation_query.listY  = self.serverCmd_now.list_y
-								self.navigation_query.listSpeed = self.serverCmd_now.list_speed
-								self.navigation_query.listDirectionTravel = self.serverCmd_now.list_directionTravel
-								self.navigation_query.listAngleLine  = self.serverCmd_now.list_angleLine
-								self.navigation_query.listRoadWidth  = self.serverCmd_now.list_roadWidth
-								self.navigation_query.listAngleFinal = self.serverCmd_now.list_angleFinal
-								# - 
-								if self.navigation_respond.modeMove == 5 and self.navigation_respond.completed == 1:
-									self.completed_moveSpecial = 1
-									self.enable_moving = 0
-
-							elif self.mission_after == 1: # - Tiến lên 2 nấc.
-								self.enable_moving = 1
-
-								self.navigation_query.modeMove = 5
-								# -
-								self.serverCmd_now = self.server_cmdRequest
-								# -
-								angle_2 = self.serverCmd_now.target_z + pi
-								angle_2 = self.limitAngle(angle_2)
-								self.goalTarget.pose = self.getPose_from_offset(self.serverCmd_now.target_x, self.serverCmd_now.target_y, angle_2, self.serverCmd_now.offset*2)
-								# - 
-								self.navigation_query.GoalID = self.serverCmd_now.target_id
-								self.navigation_query.GoalX  = self.goalTarget.pose.position.x
-								self.navigation_query.GoalY  = self.goalTarget.pose.position.y
-								self.navigation_query.GoalAngle = self.serverCmd_now.target_z
-								# --
-								self.navigation_query.listID = self.serverCmd_now.list_id
-								self.navigation_query.listX  = self.serverCmd_now.list_x
-								self.navigation_query.listY  = self.serverCmd_now.list_y
-								self.navigation_query.listSpeed = self.serverCmd_now.list_speed
-								self.navigation_query.listDirectionTravel = self.serverCmd_now.list_directionTravel
-								self.navigation_query.listAngleLine  = self.serverCmd_now.list_angleLine
-								self.navigation_query.listRoadWidth  = self.serverCmd_now.list_roadWidth
-								self.navigation_query.listAngleFinal = self.serverCmd_now.list_angleFinal
-								# - 
-								if self.navigation_respond.modeMove == 5 and self.navigation_respond.completed == 1:
-									self.completed_moveSpecial = 1
-									self.enable_moving = 0
-							else:
-								self.completed_moveSpecial = 1
-								self.enable_moving = 0
+						self.navigation_query.modeMove = 5
+						# --
+						self.serverCmd_now = self.server_cmdRequest
+						# -
+						self.navigation_query.GoalID = self.serverCmd_now.target_id
+						self.navigation_query.GoalX  = self.serverCmd_now.target_x
+						self.navigation_query.GoalY  = self.serverCmd_now.target_y
+						self.navigation_query.GoalAngle = self.serverCmd_now.target_z
+						# --
+						self.navigation_query.listID = self.serverCmd_now.list_id
+						self.navigation_query.listX  = self.serverCmd_now.list_x
+						self.navigation_query.listY  = self.serverCmd_now.list_y
+						self.navigation_query.listSpeed = self.serverCmd_now.list_speed
+						self.navigation_query.listDirectionTravel = self.serverCmd_now.list_directionTravel
+						self.navigation_query.listAngleLine  = self.serverCmd_now.list_angleLine
+						self.navigation_query.listRoadWidth  = self.serverCmd_now.list_roadWidth
+						self.navigation_query.listAngleFinal = self.serverCmd_now.list_angleFinal
+						# - 
+						if self.navigation_respond.modeMove == 5 and self.navigation_respond.completed == 1:
+							self.completed_moveSpecial = 1
+							self.enable_moving = 0
 
 					self.process = 2
 				else:
 					self.process = 47
 
+			# Archie: bỏ qua
 			elif self.process == 47: # - Thực hiện nhiệm vụ sau: Kiểm tra băng tải.
 				if self.completed_checkRack == 0:
 					self.job_doing = 5
@@ -2246,11 +2397,88 @@ class ros_control():
 
 					else:
 						self.charger_requir = self.charger_off
-						if self.mission_before == 0: # - Nhận hàng.
+						if self.mission_before == 0: # - Nhận hàng.        # 2 trường hơp nhận hàng, 2 trường hợp trả hàng
 							self.control_CPD = CPD_write()
+		
+							if self.case_receive == 1 and self.case1_step == 0:                     # Nhận hàng ở kho Modula
+								self.AGVToyo_signal.signal_toyoBit5_connected = 1
+								if self.signal_ConveyorToyo.signal_toyoBit5_connected == 1:                   # Conveyor xác nhận vị trí với AGV
+									self.case1_step = 1
+								else:
+									self.flag_CYmachine_posError = 1
+									print("AutoMode -> Ko phát hiện vị trí của băng tải máy ")
+							
+							elif self.case_receive == 1 and self.case1_step == 1:
+									
+									if self.signal_ConveyorToyo.signal_toyoBit7_ready == 1:                   # wait user pressed button
+										if self.signal_ConveyorToyo.signal_toyoBit1 == 1 and self.signal_ConveyorToyo.signal_toyoBit2 == 0:
+											self.control_conveyors.No1_mission = self.CYTask_receive
+											self.control_conveyors.No2_mission = self.CYTask_stop
+
+											if self.signal_conveyor11.status == self.CYTask_done and self.signal_ConveyorToyo.signal_toyoBit6_done == 1:
+												self.AGVToyo_signal.signal_toyoBit6_done = 1
+												self.listMission_completed[0] = 1
+												self.case_receive = 3
+												self.CY11_register = 1                       # ghi nhớ đã nhận khay 11
+												self.CY12_register = 0
+
+										elif self.signal_ConveyorToyo.signal_toyoBit1 == 0 and self.signal_ConveyorToyo.signal_toyoBit2 == 1:
+											self.control_conveyors.No1_mission = self.CYTask_stop
+											self.control_conveyors.No2_mission = self.CYTask_receive
+
+											if self.signal_conveyor12.status == self.CYTask_done and self.signal_ConveyorToyo.signal_toyoBit6_done == 1:
+												self.AGVToyo_signal.signal_toyoBit6_done = 1
+												self.listMission_completed[1] = 1
+												self.case_receive = 3
+												self.CY11_register = 0
+												self.CY12_register = 1                       #  ghi nhớ đã nhận khay 12
+												
+										elif self.signal_ConveyorToyo.signal_toyoBit1 == 1 and self.signal_ConveyorToyo.signal_toyoBit2 == 1:
+											self.control_conveyors.No1_mission = self.CYTask_receive
+											self.control_conveyors.No2_mission = self.CYTask_receive
+
+											if self.signal_conveyor11.status == self.CYTask_done and self.signal_conveyor12.status == self.CYTask_done and self.signal_ConveyorToyo.signal_toyoBit6_done == 1:
+												self.AGVToyo_signal.signal_toyoBit6_done = 1
+												self.listMission_completed[0] = 1
+												self.listMission_completed[1] = 1
+												self.case_receive = 3
+												self.CY11_register = 1
+												self.CY12_register = 1
+										else:
+											self.control_conveyors.No1_mission = self.CYTask_stop
+											self.control_conveyors.No2_mission = self.CYTask_stop
+											self.CY11_register = 0
+											self.CY12_register = 0
+
+									if self.signal_conveyor21.signal_limitAhead == 1 and self.signal_conveyor21.signal_limitBehind == 1 and self.signal_conveyor21.signal_ssCheckTray == 1:
+										self.CY21_register = 1
+									else:
+										self.CY21_register = 0
+
+									if self.signal_conveyor22.signal_limitAhead == 1 and self.signal_conveyor22.signal_limitBehind == 1 and self.signal_conveyor22.signal_ssCheckTray == 1:
+										self.CY22_register = 1
+									else:
+										self.CY22_register = 0																						
+
+							elif self.case_receive == 2:                 # Trả hàng ở truyền IE5 
+								self.AGVToyo_signal.signal_toyoBit5_connected = 1
+								if self.signal_ConveyorToyo.signal_toyoBit5_connected == 1:                   # Conveyor xác nhận vị trí với AGV
+									if self.signal_ConveyorToyo.signal_toyoBit7_ready == 1:                   # wait user pressed button
+										pass
+
+							elif self.case_receive == 3:                # Nhận tray ở truyền IE5
+								pass
+
+							else:
+								self.AGVToyo_signal.signal_toyoBit5_connected = 1
+								if self.signal_ConveyorToyo.signal_toyoBit5_connected == 1:
+									if self.signal_ConveyorToyo.signal_toyoBit7_ready == 1:
+										if self.CY11_register == 1 and self.CY12_register == 0:
+											self.
+													 						
 							# - Băng tải số 11.
 							if self.listMission_conveyor[0] == 1:
-								self.control_conveyors.No5_mission = self.CYTask_received
+								self.control_conveyors.No5_mission = self.CYTask_receive
 								if self.signal_conveyor11.status == 1:
 									self.control_CPD.output3 = 1
 								# -
@@ -2271,7 +2499,7 @@ class ros_control():
 
 							# - Băng tải số 12.
 							if self.listMission_conveyor[1] == 1:
-								self.control_conveyors.No3_mission = self.CYTask_received
+								self.control_conveyors.No3_mission = self.CYTask_receive
 								if self.signal_conveyor12.status == 1:
 									self.control_CPD.output2 = 1
 								# -
@@ -2293,7 +2521,7 @@ class ros_control():
 							if count_box <= 3: # - Lấy <= 3 Thùng hàng.
 								# - Băng tải số 21.
 								if self.listMission_conveyor[3] == 1:
-									self.control_conveyors.No6_mission = self.CYTask_received
+									self.control_conveyors.No6_mission = self.CYTask_receive
 									if self.signal_conveyor21.status == 1:
 										self.control_CPD.output7 = 1
 									# -
@@ -2315,7 +2543,7 @@ class ros_control():
 
 								# - Băng tải số 22.
 								if self.listMission_conveyor[4] == 1:
-									self.control_conveyors.No4_mission = self.CYTask_received
+									self.control_conveyors.No4_mission = self.CYTask_receive
 									if self.signal_conveyor22.status == 1:
 										self.control_CPD.output5 = 1
 									# -
@@ -2393,7 +2621,7 @@ class ros_control():
 							self.control_CPD = CPD_write()
 							# - Băng tải số 21.
 							if self.listMission_conveyor[3] == 1:
-								self.control_conveyors.No6_mission = self.CYTask_received
+								self.control_conveyors.No6_mission = self.CYTask_receive
 								if self.signal_conveyor21.status == 1:
 									self.control_CPD.output7 = 1
 								# -
@@ -2415,7 +2643,7 @@ class ros_control():
 
 							# - Băng tải số 22.
 							if self.listMission_conveyor[4] == 1:
-								self.control_conveyors.No4_mission = self.CYTask_received
+								self.control_conveyors.No4_mission = self.CYTask_receive
 								if self.signal_conveyor22.status == 1:
 									self.control_CPD.output5 = 1
 								# -
@@ -2509,7 +2737,6 @@ class ros_control():
 					self.Traffic_infoRespond.mode = 2
 			else:
 				self.Traffic_infoRespond.mode = 5
-
 
 			# ---------------- Speaker ---------------- #
 			if self.flag_error == 1 and self.flag_warning == 1:

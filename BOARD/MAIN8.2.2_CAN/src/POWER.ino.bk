@@ -1,0 +1,455 @@
+/*
+Name:  	STI POWER82.ino
+Author: Hoang Van Quang - 30/11/2021
+Info : Mach POWER (Main Control ): 
+    + Sạc 
+    + Đo pin 
+    + Còi 
+    + Nút nhấn 
+    + EMC 
+    + Tắt nguồn 5v, 24V
+    + CAN
+*/
+
+#if (ARDUINO >= 100)
+#include <Arduino.h>
+#else
+#include <WProgram.h>
+#endif
+
+#include "ros.h"
+#include "ros/time.h"
+#include "sti_msgs/POWER_info.h"
+#include "sti_msgs/POWER_request.h"
+#include <SimpleKalmanFilter.h>
+#include "WiFi.h"
+
+#include "Main_controller.h"
+#include "CAN_manager.h"
+
+//----Pin define ----//
+#define PIN_ADC_VOLTAGE 34
+#define PIN_ADC_CURRENT 35
+
+#define PIN_EMC_READ    13  // (main82: 2 , main822: 13) en = 1 -> 0
+#define PIN_EMC_WRITE   27 // en = 0 
+#define PIN_EMC_RESET   26 // en = 1
+
+#define BUTTON_EMC_RES  39 // (B1 in board) pullup/ raise -> pulldown /raise
+#define BUTTON_SHUTDOWN 36 // (B2 in board)pulldown/ raise
+
+
+#define LED_BUTTON_EMC_RES  21 // led button 
+#define LED_BUTTON_SHUTDOWN 19 // led button 
+
+#define PIN_CHARGE 14 // en = 1
+// #define PIN_READ_PC     22 // en = 0
+
+#define PIN_OFF_5v  25  // allway low //  high both to shutdown
+#define PIN_OFF_22v 12  // allway low //
+
+#define PIN_SOUND_SP 18  // en = 0
+#define PIN_SOUND_1  15  // en = 0
+#define PIN_SOUND_2  0   // en = 0
+#define PIN_SOUND_3  32  // en = 0
+#define PIN_SOUND_4  33  // en = 0
+
+#define SMALLEST_BATTERY_VALUE 210
+#define LOW_BATTERY_VALUE 225
+
+//---time ---
+#define PUB_INFO_FREQUENCY 10 
+unsigned long pre_info_time = 0 ;
+// -- --
+TaskHandle_t TaskCAN_OC;
+Main_controller* MainCtrl = new Main_controller(MainCAN);
+// -- --
+
+SimpleKalmanFilter voltageFilter(10, 1, 0.01);
+SimpleKalmanFilter currentFilter(10, 1, 0.01);
+
+// ----- Error-----
+bool flag_requir_ESP_reset;
+bool is_command_pc = 0;    
+
+ros::NodeHandle nh;
+sti_msgs::POWER_info power_info;
+sti_msgs::POWER_request power_request;   
+
+/*
+    y = ax + b 
+    24.03  - 3127
+    19.16  - 2435
+    14.57  - 1808
+    a = 0.0072
+    b = 1.6028
+*/
+
+// he so
+float av_coefficient =  0;
+float bv_coefficient =  0;
+float ac_coefficient =  0;
+float bc_coefficient =  0;
+// button
+int dem1 ,tt_ht1, tt_tr1;
+int dem2 ,tt_ht2, tt_tr2;
+int dem3 ,tt_ht3, tt_tr3;
+
+double timeShutdown = 0;
+double timeReset = 0;
+float voltages = 0.0;
+unsigned long time_saveVoltage = 0;
+unsigned long prev_debug_time = 0;
+
+void POWERCallback(const sti_msgs::POWER_request &data)
+{
+    power_request = data ; 
+    // charge
+    digitalWrite(PIN_CHARGE , power_request.charge.data);
+    // -- sound
+    MainCtrl()->soundControl(power_request.sound_on.data, power_request.sound_type.data);
+
+    //EMC
+    digitalWrite(PIN_EMC_WRITE , power_request.EMC_write.data);
+    digitalWrite(PIN_EMC_RESET , power_request.EMC_reset.data);
+
+    //OFF power
+    digitalWrite(PIN_OFF_5v  , power_request.OFF_5v.data);
+    digitalWrite(PIN_OFF_22v , power_request.OFF_22v.data);
+
+    //coefficient 
+    // av_coefficient = power_request.a_coefficient.data;
+    // bv_coefficient = power_request.b_coefficient.data;
+}  
+
+ros::Publisher power_pub("POWER_info", &power_info);         	
+ros::Subscriber<sti_msgs::POWER_request> power_sub("POWER_request", POWERCallback);
+
+void init_pin(){
+
+    pinMode(PIN_ADC_VOLTAGE, INPUT ); 
+    pinMode(PIN_ADC_CURRENT, INPUT ); 
+
+    pinMode(PIN_EMC_READ,    INPUT  ); 
+    pinMode(PIN_EMC_WRITE,   OUTPUT );
+    pinMode(PIN_EMC_RESET,   OUTPUT ); 
+
+    pinMode(BUTTON_EMC_RES,  INPUT_PULLUP );
+    pinMode(BUTTON_SHUTDOWN, INPUT_PULLUP ); 
+
+    pinMode(LED_BUTTON_EMC_RES,  OUTPUT );
+    pinMode(LED_BUTTON_SHUTDOWN, OUTPUT ); 
+
+    pinMode(PIN_CHARGE,      OUTPUT );
+
+    pinMode(PIN_CHARGE,      OUTPUT ); 
+
+    pinMode(PIN_OFF_5v,      OUTPUT );
+    pinMode(PIN_OFF_22v,     OUTPUT ); 
+
+    pinMode(PIN_SOUND_SP,    OUTPUT );
+    pinMode(PIN_SOUND_1,     OUTPUT );
+    pinMode(PIN_SOUND_2,     OUTPUT );
+    pinMode(PIN_SOUND_3,     OUTPUT );
+    pinMode(PIN_SOUND_4,     OUTPUT );
+}
+
+void read_voltage(){
+    // read voltage pin 
+    float analog_voltage = analogRead(PIN_ADC_VOLTAGE);
+    float estimated_voltage = voltageFilter.updateEstimate(analog_voltage);
+    
+    if (analog_voltage == 0) {
+        voltages = 0 ;
+    }
+    else{
+        voltages = av_coefficient * estimated_voltage + bv_coefficient ;
+    }
+}
+
+void read_analog(){
+    // read voltage pin 
+    float analog_voltage = analogRead(PIN_ADC_VOLTAGE);
+    float estimated_voltage = voltageFilter.updateEstimate(analog_voltage);
+    
+    power_info.pin_analog.data = estimated_voltage;
+    if (analog_voltage == 0) {
+        power_info.pin_voltage.data = 0;
+        voltages = 0;
+    }
+    else{
+        power_info.pin_voltage.data = av_coefficient * estimated_voltage + bv_coefficient ;
+        voltages = power_info.pin_voltage.data;
+    }
+    
+    // read current charge
+    // if(power_request.charge.data == true ){
+
+    float analog_current = analogRead(PIN_ADC_CURRENT);
+    float estimated_current = currentFilter.updateEstimate(analog_current);
+
+    power_info.charge_analog.data = estimated_current;
+    if( analog_current == 0 ) {
+        power_info.charge_current.data = 0 ;
+    }
+    else{
+        estimated_current = ac_coefficient * estimated_current + bc_coefficient ;
+        power_info.charge_current.data = (estimated_current - 3020)/49.636;
+    }
+    
+    // }
+    // else{
+    //     power_info.charge_current.data = 0 ;
+    //     power_info.charge_analog.data  = 0 ; 
+    // }
+
+        
+}
+
+bool read_button_resetEMC(){
+    //(B1 in board)
+    tt_ht1 = digitalRead(BUTTON_EMC_RES) ;
+    if(tt_ht1 != tt_tr1 ){
+        dem1++ ; 
+    }
+    else{
+        // nh.loginfo("00");
+        tt_tr1 = tt_ht1 ;
+        dem1 = 0 ; 
+        return 0 ;
+    }
+    if(dem1 > 200){
+        // nh.logwarn("1111111111111111");
+        dem1 = 0 ;
+        return 1 ;
+    } 
+
+}
+
+bool read_button_resetEMC_v1(){
+    //(B1 in board)
+    tt_ht1 = digitalRead(BUTTON_EMC_RES) ;
+
+    if (tt_ht1 == 1){
+        timeReset = millis();
+    }
+
+    if(millis() - timeReset > 150){
+        return 1;
+    }else{
+        return 0;
+    } 
+}
+
+int read_button_Shutdown(){
+    //(B2 in board)
+    tt_ht2 = digitalRead(BUTTON_SHUTDOWN) ;
+    if(tt_ht2 != tt_tr2 ){
+        dem2++; 
+    }
+    else{
+        // nh.loginfo("00");
+        tt_tr2 = tt_ht2;
+        dem2 = 0; 
+        return 0;
+    }
+    if(dem2 > 2000){
+        // nh.logwarn("1111111111111111");
+        // dem2 = 0;
+        return 1;
+    } 
+
+}
+
+int read_button_Shutdown_v1(){
+    //(B2 in board)
+    tt_ht2 = digitalRead(BUTTON_SHUTDOWN);
+    if (tt_ht2 == 0){
+        timeShutdown = millis();
+    }
+
+    if(millis() - timeShutdown > 2000){
+        return 1;
+    }else{
+        return 0;
+    } 
+}
+
+bool read_EMC_status(){
+
+    tt_ht3 = digitalRead(PIN_EMC_READ) ;
+    if(tt_ht3 != tt_tr3 ){
+        dem3++ ; 
+    }
+    else{
+        // nh.loginfo("00");
+        tt_tr3 = tt_ht3 ;
+        dem3 = 0 ; 
+        return 0 ;
+    }
+    if(dem3 > 200){
+        // nh.logwarn("1111111111111111");
+        dem3 = 0 ;
+        return 1 ;
+    } 
+
+}
+
+// Kiểm tra kết nối với PC: Nếu sau thời gian T ko nhận được lệnh -> lỗi.
+bool communication_check(){
+	if (!nh.connected()){ // Mất kết nối với ROS -> phát yêu cầu dừng động cơ -> Restart Esp.
+		delay(3000);
+        ESP.restart();
+        digitalWrite(PIN_OFF_5v  , HIGH); // tat nguon
+        digitalWrite(PIN_OFF_22v , HIGH);
+		return 1;
+	}	
+	return 0;
+}
+
+void CanHandle_OC( void* pvParameters ){
+    for(;;){
+        MainCtrl->CANReceiveHandle();
+        vTaskDelay(3);
+    }
+}
+
+void setup()
+{   
+    // tat wifi , blutooth
+    WiFi.mode(WIFI_OFF);
+    btStop();
+
+    init_pin();
+    // giu nguon 
+    digitalWrite(PIN_OFF_5v,  0);
+    digitalWrite(PIN_OFF_22v, 0);
+    // reset error
+    digitalWrite(PIN_EMC_WRITE, 1);
+    digitalWrite(PIN_EMC_RESET, 1);
+    delay(200);
+    digitalWrite(PIN_EMC_RESET, 0);
+    // charge OFF
+    digitalWrite(PIN_CHARGE , 1);
+    
+    //tat loa
+    delay(1000);
+    digitalWrite(PIN_SOUND_SP , HIGH );
+    digitalWrite(PIN_SOUND_1  , HIGH );
+    digitalWrite(PIN_SOUND_2  , HIGH );
+    digitalWrite(PIN_SOUND_3  , HIGH );
+    digitalWrite(PIN_SOUND_4  , HIGH );
+
+    nh.initNode();
+    nh.getHardware()->setBaud(57600); 
+
+    nh.advertise(power_pub);
+    nh.subscribe(power_sub);
+
+    delay(50);
+
+    // // charge ON
+    // digitalWrite(PIN_CHARGE , 0);
+
+	delay(50);
+    time_saveVoltage = millis();
+    while (!nh.connected())
+    {   
+        if ( read_button_Shutdown_v1() == 1 ){ // tat nguon 
+            digitalWrite(PIN_OFF_5v  , HIGH);
+            digitalWrite(PIN_OFF_22v , HIGH);
+        }
+
+        if ( read_button_resetEMC_v1() == 1 ){ // xoa loi 
+            digitalWrite(PIN_EMC_RESET, 1);
+            delay(200);
+            digitalWrite(PIN_EMC_RESET, 0);
+        }
+
+        delay(1);
+        nh.spinOnce();
+    }
+
+    nh.loginfo("STI vietnam - POWER 8.2 OK ('_') ");
+    // charge OFF
+    digitalWrite(PIN_CHARGE , 0);
+
+    // -- 18/11/2021
+    av_coefficient =  0.00633798;
+    bv_coefficient =  4.25328; 
+
+    ac_coefficient =  0.9976;
+    bc_coefficient =  146.0266 ;
+    time_saveVoltage = millis();
+}
+
+void shutdown_voltageLow(){
+    if (power_info.pin_voltage.data > 21.){
+        time_saveVoltage = millis();
+    }
+
+    if ((millis() - time_saveVoltage) > 30000){ 
+        digitalWrite(PIN_OFF_5v  , HIGH);
+        digitalWrite(PIN_OFF_22v , HIGH);
+    }
+}
+
+void test_22V(){
+    digitalWrite(PIN_OFF_22v , 0);
+    delay(4000);
+    digitalWrite(PIN_OFF_22v , 1);
+    delay(4000);
+} 
+
+void loop(){
+    // kiem tra ket noi PC.
+    communication_check();
+    // test_22V();
+
+    power_info.EMC_status.data = read_EMC_status();
+
+    if ( read_button_Shutdown_v1() == 1 ){ // tat nguon 
+        digitalWrite(PIN_OFF_5v  , HIGH);
+        digitalWrite(PIN_OFF_22v , HIGH);
+        power_info.button1.data = true;
+    }else{
+        power_info.button1.data = false;
+    }
+
+    if ( read_button_resetEMC_v1() == 1 ){ // xoa loi 
+        digitalWrite(PIN_EMC_RESET, 1);
+        delay(200);
+        digitalWrite(PIN_EMC_RESET, 0);
+        power_info.button2.data = true;
+    }else{
+        power_info.button2.data = false;
+    }
+
+    if ((millis() - pre_info_time) > (1000 / PUB_INFO_FREQUENCY))
+    {   
+        pre_info_time = millis();
+        read_analog();
+        power_pub.publish(&power_info);
+
+        // -- dien ap thap sau n giay tgi sap nguon. them 17/11/2021
+        shutdown_voltageLow();
+    }
+	nh.spinOnce();
+}
+
+void printDebug(){
+    char buffer[100];
+	sprintf(buffer, "V = %f", voltages);
+    nh.loginfo(buffer);
+}
+
+void create_task() {   
+    xTaskCreatePinnedToCore(
+                CanHandle_OC,   /* Task function. */
+                "TaskCAN_OC",     /* name of task. */
+                10000,       /* Stack size of task */
+                NULL,        /* parameter of the task */
+                1,           /* priority of the task */
+                &TaskCAN_OC,      /* Task handle to keep track of created task */
+                1);          /* pin task to core 0 */              
+}

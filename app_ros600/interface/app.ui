@@ -5546,10 +5546,10 @@ trái</string>
       </property>
      </widget>
     </widget>
-    <zorder>fr_listTask</zorder>
-    <zorder>fr_password</zorder>
     <zorder>fr_handMode_move</zorder>
     <zorder>fr_handMode_conveyor</zorder>
+    <zorder>fr_listTask</zorder>
+    <zorder>fr_password</zorder>
     <zorder>fr_agv</zorder>
    </widget>
    <widget class="QFrame" name="fr_setting">

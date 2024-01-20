@@ -1,0 +1,62 @@
+# -- out of charger
+rostopic pub /server_cmdRequest message_pkg/Server_cmdRequest "process: 0.0
+target_id: 5
+target_x: 0.0
+target_y: 0.0
+target_z: 1.5711
+tag: 0
+offset: 0.54
+list_id: [1, 2, 0, 0, 0]
+list_x: [0.0, 0.0, 0.0, 0.0, 0.0]
+list_y: [0.0, 1.0, 0.0, 0.0, 0.0]
+list_speed: [100.0, 100.0, 0.0, 0.0, 0.0]
+list_directionTravel: [1.0, 1.0, 0.0, 0.0, 0.0]
+list_angleLine: [5.0, 1.57, 0.0, 0.0 , 0.0]
+list_roadWidth: [0.0, 0.0, 0.0, 0.0, 0.0]
+list_angleFinal: [5.0, 5.0, 5.0, 5.0, 5.0]
+before_mission: 0
+after_mission: 47
+id_command: 45468
+command: """
+
+# -- return goods
+rostopic pub /server_cmdRequest message_pkg/Server_cmdRequest "process: 0.0
+target_id: 5
+target_x: 0.0
+target_y: 5.0
+target_z: 1.5711
+tag: 0
+offset: 0.54
+list_id: [2, 3, 4, 5, 0]
+list_x: [0.0 , 0.0, 0.0, 0.0, 0.0]
+list_y: [1.0, 3.0, 4.0, 5.0, 0.0]
+list_speed: [100.0, 100.0, 100.0, 100.0, 0.0]
+list_directionTravel: [1.0, 1.0, 1.0, 1.0, 0.0]
+list_angleLine: [5.0, 5.0, 1.57, 1.57, 0.0]
+list_roadWidth: [0.0, 0.0, 0.0, 0.0, 0.0]
+list_angleFinal: [5.0, 5.0, 5.0, 5.0, 5.0]
+before_mission: 1
+after_mission: 1
+id_command: 45468
+command: """
+
+# go back for charging
+rostopic pub /server_cmdRequest message_pkg/Server_cmdRequest "process: 0.0
+target_id: 1
+target_x: 0.0
+target_y: 0.0
+target_z: 0.0
+tag: 2
+offset: 1.0
+list_id: [1, 0, 0, 0, 0]
+list_x: [0.0, 0.0, 0.0, 0.0, 0.0]
+list_y: [0.0, 0.0, 0.0, 0.0, 0.0]
+list_speed: [0.0, 0.0, 0.0, 0.0, 0.0]
+list_directionTravel: [1.0, 0.0, 0.0, 0.0, 0.0]
+list_angleLine: [5.0, 0.0, 0.0, 0.0, 0.0]
+list_roadWidth: [0.0, 0.0, 0.0, 0.0, 0.0]
+list_angleFinal: [5.0, 5.0, 5.0, 5.0, 5.0]
+before_mission: 66
+after_mission: 10
+id_command: 0
+command: """

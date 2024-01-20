@@ -1,0 +1,31 @@
+<launch>
+  <rosparam command="load" file="$(find launch_pkg)/config/param_AGVconveyor.yaml" />
+
+  <node pkg="tf" type="static_transform_publisher" name="agv1_to_agv1Safety" args="0 0 0 0 0 0 agv1 agv1_safety 30" />
+
+  <arg name="agv1" default="$(find agv_simulation)/urdf/agv1.urdf"/>
+  <param name="agv1_description" command="$(find xacro)/xacro $(arg agv1)" />
+
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" >
+    <remap from="robot_description" to="agv1_description" />
+  </node>
+
+  <!-- robot UI -->
+  <node name="app_node" pkg="app_ros600" type="app.py" />       
+
+  <!-- Fake signal of Conveyor on AGV and Signal of ConveyorSystem in Factory |OK-->
+  <node name="appFakeSignal_node" pkg="app_ros600" type="app_CY34_fake.py" />  
+
+  <!-- Điều phối chung -->
+  <node name="stiControl" pkg="sti_control" type="stiControl_CY34_origin.py" output="screen"/>
+
+  <!-- Điều khiển AGV qua các điểm di chuyển -->  
+  <node name="stiNavigation600" pkg="sti_module" type="stiNavigation600.py"/>
+
+  <!-- Vị trí của AGV trên Rviz -->
+  <node name="agv_sim" pkg="agv_simulation" type="agv_sim.py" />
+
+  <!-- Hiển thị qua rviz -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find agv_simulation)/config/rvizconfig.rviz" />  
+
+</launch> 
