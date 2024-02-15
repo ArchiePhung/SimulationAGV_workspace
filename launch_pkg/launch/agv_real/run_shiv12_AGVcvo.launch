@@ -14,7 +14,7 @@
   <!-- <node name="app_node" pkg="app_ros600" type="app_shiv12_AGVcnv.py" />        -->
 
   <!-- Fake signal of Conveyor on AGV and Signal of ConveyorSystem in Factory |OK-->
-  <!-- <node name="appFakeSignal_node" pkg="app_ros600" type="appfakeSignal_AGVconv.py" />   -->
+  <node name="appFakeSignal_node" pkg="app_ros600" type="appfakeSignal_AGVconv.py" />  
 
   <!-- Điều phối chung -->
   <!-- <node name="stiControl" pkg="sti_control" type="stiControl_agv12Conveyor.py" output="screen"/> -->
@@ -26,6 +26,6 @@
   <node name="agv_sim" pkg="agv_simulation" type="agv_sim.py" />
 
   <!-- Hiển thị qua rviz -->
-  <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find agv_simulation)/config/rvizconfig.rviz" />   -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find agv_simulation)/config/rvizconfig.rviz" />  
 
 </launch> 

@@ -1,8 +1,0 @@
-bool signal_toyoBit1
-bool signal_toyoBit2
-bool signal_toyoBit3
-bool signal_toyoBit4
-bool signal_toyoBit5_connected
-bool signal_toyoBit6_done
-bool signal_toyoBit7_ready
-bool signal_toyoBit8_error

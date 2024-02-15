@@ -122,7 +122,7 @@ class Fake_stiClient():
                     self.pointOne.position.y = 0.0
                     self.pointSecond.position.x = 5.0
                     self.pointSecond.position.y = 5.0
-                    self.velocity = 0.6
+                    self.velocity = 0.2
                     self.radius = 0.0
                     self.pointCenter = Pose()
                     self.numberPts = 100

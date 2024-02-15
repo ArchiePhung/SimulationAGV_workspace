@@ -1,0 +1,3 @@
+bool checkrack_status
+bool after_mission1_status
+bool after_mission_status

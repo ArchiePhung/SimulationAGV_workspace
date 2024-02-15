@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="pose_publisher" name="robot_pose" type="robot_pose.py" >
+    </node>
+</launch>

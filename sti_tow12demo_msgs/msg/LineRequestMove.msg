@@ -1,0 +1,11 @@
+int32 enable
+int32 target_id
+float64 target_x
+float64 target_y
+float64 target_z
+float64 offset
+sti_tow12demo_msgs/PathInfo[] pathInfo
+int32 enableStop
+sti_tow12demo_msgs/StopPoint pointStopAvoid
+int32 mission
+string mess

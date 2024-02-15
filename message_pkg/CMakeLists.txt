@@ -50,14 +50,15 @@ add_message_files(
   CAN_status.msg
   RTC_send.msg
   RTC_status.msg
-  Status_conveyor.msg
+  Signal_conveyor.msg
   
   Navigation_query.msg
   Navigation_respond.msg
 
   Signal_AGVToyo.msg
-  Signal_ConveyorAGV.msg
-  Signal_ConveyorToyo.msg
+  Signal_CYMToyo.msg
+
+  CY_respond.msg
   
 )
 

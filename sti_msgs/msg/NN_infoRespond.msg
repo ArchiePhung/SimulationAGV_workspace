@@ -8,6 +8,7 @@ int32 battery
 int32 status
 int32 mode
 int32 task_status
+int32 task_num
 int32 error_device
 int32 error_moving
 int32 error_perform

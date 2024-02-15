@@ -89,7 +89,7 @@ class statusButton:
 
 class statusColor:
 	def __init__(self):
-	# --
+		# --
 		self.lbc_agvToyoBit1 = 0
 		self.lbc_agvToyoBit2 = 0
 		self.lbc_agvToyoBit3 = 0
@@ -98,7 +98,12 @@ class statusColor:
 		self.lbc_agvToyoBit5 = 0
 		self.lbc_agvToyoBit6 = 0
 		self.lbc_agvToyoBit7 = 0
-		self.lbc_agvToyoBit8 = 0		
+		self.lbc_agvToyoBit8 = 0
+		# --
+		self.lbc_checkRack = 0
+		self.lbc_afterMission1 = 0
+		self.lbc_afterMission = 0
+		# --		
 
 class statusConveyor:
 	def __init__(self):
@@ -500,7 +505,22 @@ class WelcomeScreen(QDialog):
 			self.lb_agvtoyo8.setStyleSheet("background-color: blue;")
 		else:
 			self.lb_agvtoyo8.setStyleSheet("background-color: white;")
-		
+		# -- 
+		if (self.statusColor.lbc_checkRack == 1):
+			self.lbc_checkRack.setStyleSheet("background-color: blue;")
+		else:
+			self.lbc_checkRack.setStyleSheet("background-color: white;")		
+
+		if (self.statusColor.lbc_afterMission1 == 1):
+			self.lbc_afterMission1.setStyleSheet("background-color: blue;")
+		else:
+			self.lbc_afterMission1.setStyleSheet("background-color: white;")
+
+		if (self.statusColor.lbc_afterMission == 1):
+			self.lbc_afterMission.setStyleSheet("background-color: blue;")
+		else:
+			self.lbc_afterMission.setStyleSheet("background-color: white;")
+
 class Program(threading.Thread):
 	def __init__(self, threadID):
 		threading.Thread.__init__(self)
@@ -559,9 +579,16 @@ class Program(threading.Thread):
 		rospy.Subscriber("/CPD_write", CPD_write, self.callBack_CPDwrite)
 		self.data_CPDwrite = CPD_write()
 
+		# --
+		rospy.Subscriber("/task_status", CY_respond, self.callBack_CYrespond)
+		self.data_CYrespond = CY_respond()
+
 	def callBack_CPDwrite(self, data):
 		self.data_CPDwrite = data
-		
+
+	def callBack_CYrespond(self, data):
+		self.data_CYrespond = data
+
 	def run_screen(self):
 		self.widget.show()
 		try:
@@ -622,6 +649,11 @@ class Program(threading.Thread):
 		self.statusColor.lbc_agvToyoBit6 = self.data_CPDwrite.output6
 		self.statusColor.lbc_agvToyoBit7 = self.data_CPDwrite.output7
 		self.statusColor.lbc_agvToyoBit8 = self.data_CPDwrite.output8
+
+		# --
+		self.statusColor.lbc_checkRack = self.data_CYrespond.checkrack_status
+		self.statusColor.lbc_afterMission = self.data_CYrespond.after_mission_status		
+		self.statusColor.lbc_afterMission1 = self.data_CYrespond.after_mission1_status	
 
 	def readButton(self):
 		# -- 

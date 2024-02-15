@@ -1,4 +1,0 @@
-bool signal_limitAhead
-bool signal_limitBehind
-bool signal_ssCheckTray
-int8 status

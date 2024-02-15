@@ -3,6 +3,7 @@
 
 """
 Developer: Hoang van Quang
+Developer: Phung Quy Duong
 Company: STI Viet Nam
 Date  : 15/4/2022
 Update: 24/10/2022
@@ -18,6 +19,9 @@ Update: 15/08/2023:
 	- Lỗi AGV ở xa vị trí cuối (mode = 5) nhưng vẫn bám theo điểm đó.
 Update: 28/09/2023: 
 	- Thêm cảnh báo: Lỗi lệnh Traffic khi AGV đang di chuyển vào vị trí trả thùng.
+Update: 20/1/2023:
+	- Thêm chương trình gặp lỗi mắc hàng thì cần xử lý lỗi >> Nhấn xóa lỗi thì AGV mới chạy được (cả trong trường hợp đổi lệnh)
+	- check 4 lần khi thùng hàng ra khỏi AGV. 
 """
 
 import roslib
@@ -234,6 +238,10 @@ class ros_control():
 		# -
 		self.pub_disableBrake = rospy.Publisher("/disable_brake", Bool, queue_size= 20)
 		self.disable_brake = Bool()
+		# - Archie code
+		self.pub_taskStatus = rospy.Publisher("/task_status", CY_respond, queue_size= 20)
+		self.data_taskStatus = CY_respond()
+
 		# - Task driver
 		self.taskDriver_nothing = 0
 		self.taskDriver_resetRead = 1
@@ -383,7 +391,7 @@ class ros_control():
 		self.numberError = 0
 		self.lastTime_checkLift = 0.0
 		# -- add new
-		self.enb_debug = 0
+		self.enb_debug = 1
 		# --
 		self.listError = []
 		self.job_doing = 0
@@ -433,6 +441,22 @@ class ros_control():
 		# -
 		self.saveTime_EMG = rospy.Time.now()
 		self.saveTime_resetFrameWork = rospy.Time.now()
+		# -
+		self.step_check11 = 0
+		self.step_check12 = 0
+		self.step_check13 = 0
+		self.step_check21 = 0
+		self.step_check22 = 0
+		self.step_check23 = 0
+		# -
+		self.flagWarning_transfer11 = 0
+		self.flagWarning_transfer12 = 0
+		self.flagWarning_transfer13 = 0
+		self.flagWarning_transfer21 = 0
+		self.flagWarning_transfer22 = 0
+		self.flagWarning_transfer23 = 0	
+		# -
+		self.time_TrayOutofAGV = 0
 
 	# ------------------------ Call Back ------------------------ #
 	def callback_autoNow(self, data):
@@ -1155,20 +1179,38 @@ class ros_control():
 		if self.status_conveyor23.status == 254:
 			listError_now.append(476)
 
-		# - Sensor safety Conveyor
-		if self.status_CPD.input1 == 1 and self.job_doing != 6:
-			listError_now.append(497)
-		# - 
-		if self.status_CPD.input2 == 1 and self.job_doing != 6:
-			listError_now.append(498)
+		# -- Archie: Cảnh báo thùng hàng bị mắc giữa AGV và cụm băng tải nhận
+		if self.flagWarning_transfer11 == 1:
+			listError_now.append(301)
+		if self.flagWarning_transfer12 == 1:
+			listError_now.append(302)
+		if self.flagWarning_transfer13 == 1:
+			listError_now.append(303)
+		if self.flagWarning_transfer21 == 1:
+			listError_now.append(304)
+		if self.flagWarning_transfer22 == 1:
+			listError_now.append(305)
+		if self.flagWarning_transfer23 == 1:
+			listError_now.append(306)
+
+		if self.flagWarning_transfer11 == 0 and self.flagWarning_transfer12 == 0 and self.flagWarning_transfer13 == 0 and \
+			self.flagWarning_transfer21 == 0 and self.flagWarning_transfer22 == 0 and self.flagWarning_transfer23 == 0:
+			if self.job_doing != 6:
+				# - Sensor safety Conveyor
+				if self.status_CPD.input1 == 1:
+					listError_now.append(497)
+				# - 
+				if self.status_CPD.input2 == 1:
+					listError_now.append(498)
 
 		return listError_now
 
 	def resetAll_variable(self):
+		# - AGV move var
 		self.enable_moving  = 0
 		self.enable_parking = 0
 		self.enable_mission = 0
-		# -
+		# - completed process
 		self.completed_before_mission = 0
 		self.completed_after_mission = 0
 		self.completed_after_mission1 = 0
@@ -1179,8 +1221,9 @@ class ros_control():
 		self.completed_checkRack = 0
 		# -
 		self.mission = 0
-		self.flag_listPoint_ok = 0
+		self.flag_listPoint_ok = 0                #  chay lai tuyen duong cu
 
+		# - update new command
 		# rospy.logwarn("Update new target from: X= %s | Y= %s to X= %s| Y= %s", self.target_x, self.target_y, self.Traffic_cmdRequest.target_x, self.Traffic_cmdRequest.target_y)
 		self.log_mess("info", "Update new target: X_new = ", self.server_cmdRequest.target_x)
 		self.target_id = self.server_cmdRequest.target_id
@@ -1191,7 +1234,7 @@ class ros_control():
 		self.mission_before = self.server_cmdRequest.before_mission
 		self.mission_after = self.server_cmdRequest.after_mission
 		self.serverCmd_now = self.server_cmdRequest
-		# -
+		# - flag warning 
 		self.flag_resetFramework = 0
 		self.flag_Byhand_to_Auto = 0
 		# -
@@ -1210,6 +1253,22 @@ class ros_control():
 		self.flagWarning_receivedRack21 = 0
 		self.flagWarning_receivedRack22 = 0
 		self.flagWarning_receivedRack23 = 0
+		# -
+		# self.flagWarning_transfer11 = 0
+		# self.flagWarning_transfer12 = 0
+		# self.flagWarning_transfer13 = 0
+		# self.flagWarning_transfer21 = 0
+		# self.flagWarning_transfer22 = 0
+		# self.flagWarning_transfer23 = 0
+		# # -
+		# print("step check bị reset ở hàm reset variable")
+		# self.step_check11 = 0
+		# self.step_check12 = 0
+		# self.step_check13 = 0
+		# self.step_check21 = 0
+		# self.step_check22 = 0
+		# self.step_check23 = 0
+
 		# -
 		self.listMission_completed = [0, 0, 0, 0, 0, 0]
 		# -- add 17/03/2023
@@ -1282,6 +1341,66 @@ class ros_control():
 			cmd_vel = Twist()
 
 		return cmd_vel
+
+	def check_AGVrun(self):
+		# - 1, Đang nhận/trả hàng.
+		condition_No1 = 0
+		condition_No2 = 0
+		condition_No3 = 0
+		condition_No4 = 0
+		# -
+		condition_No1_12 = 0
+		condition_No1_34 = 0
+		condition_No1_56 = 0
+		
+		if self.status_conveyor13.status == 1 or self.status_conveyor13.status == 2 or self.status_conveyor23.status == 1 or self.status_conveyor23.status == 2:
+			condition_No1_12 = 1
+		# -
+		if (self.status_conveyor12.status == 1 or self.status_conveyor12.status == 2 or self.status_conveyor22.status == 1 or self.status_conveyor22.status == 2):
+			condition_No1_34 = 1
+		# -
+		if (self.status_conveyor11.status == 1 or self.status_conveyor11.status == 2 or self.status_conveyor21.status == 1 or self.status_conveyor21.status == 2):
+			condition_No1_56 = 1
+
+		# -- add 17/03/2023: Lỗi AGV di chuyển khi thùng chưa sang hẳn (quy trình nhận thùng)
+		if self.status_conveyor13.status == 254 or self.status_conveyor13.status == 255 or self.status_conveyor23.status == 254 or self.status_conveyor23.status == 255:
+			condition_No1_12 = 1
+		# -
+		if self.status_conveyor12.status == 254 or self.status_conveyor12.status == 255 or self.status_conveyor22.status == 254 or self.status_conveyor22.status == 255:
+			condition_No1_34 = 1
+		# -
+		if self.status_conveyor11.status == 254 or self.status_conveyor11.status == 255 or self.status_conveyor21.status == 254 or self.status_conveyor21.status == 255:
+			condition_No1_56 = 1
+
+		# -- add 19/06/2023: Lỗi AGV di chuyển khi thùng chưa sang hẳn (Do cảm biến bị nhiễu -> AGV nhận lỗi)
+		if self.flagWarning_receivedRack11 == 1 or self.flagWarning_receivedRack21 == 1:
+			condition_No1_12 = 1
+
+		if self.flagWarning_receivedRack12 == 1 or self.flagWarning_receivedRack22 == 1:
+			condition_No1_34 = 1
+
+		if self.flagWarning_receivedRack13 == 1 or self.flagWarning_receivedRack23 == 1:
+			condition_No1_56 = 1
+
+		condition_No1 = condition_No1_12 + condition_No1_34 + condition_No1_56
+
+		# - 2, Đang Parking: Vào sạc.
+		if self.navigation_respond.modeMove == 2 and self.navigation_respond.status == 1 and self.navigation_respond.completed == 0:
+			condition_No2 = 1
+
+		# - 3, Đang đi ra khỏi sạc.
+		if self.navigation_respond.modeMove == 3 and self.navigation_respond.status == 1: # and self.navigation_respond.completed == 0:
+			# condition_No3 = 1
+			# self.flag_requirOutCharge = 1
+			if self.completed_moveSpecial == 0:
+				condition_No3 = 1
+
+		# - 4, Có dị vật trên băng tải -> Không cho di chuyển.
+		if self.status_CPD.input1 == 1 or self.status_CPD.input2 == 1:
+			condition_No4 = 1
+			self.pub_cmdVel(Twist(), self.rate_cmdvel, rospy.get_time())
+		
+		return (condition_No1, condition_No2, condition_No3, condition_No4)
 
 	def run(self):
 		while not rospy.is_shutdown():
@@ -1372,6 +1491,24 @@ class ros_control():
 				self.flagWarning_receivedRack21 = 0
 				self.flagWarning_receivedRack22 = 0
 				self.flagWarning_receivedRack23 = 0
+				# -
+				if self.status_CPD.input1 == 0:
+					self.flagWarning_transfer21 = 0
+					self.flagWarning_transfer22 = 0
+					self.flagWarning_transfer23 = 0
+					
+					self.step_check21 = 0
+					self.step_check22 = 0
+					self.step_check23 = 0
+				
+				if self.status_CPD.input2 == 0:
+					self.flagWarning_transfer11 = 0
+					self.flagWarning_transfer12 = 0
+					self.flagWarning_transfer13 = 0
+					print("step check bị reset do nút xóa lỗi")
+					self.step_check11 = 0
+					self.step_check12 = 0
+					self.step_check13 = 0
 
 			else:
 				self.task_driver.data = self.taskDriver_Read
@@ -1631,111 +1768,71 @@ class ros_control():
 					self.process = 41 # 41
 
 			elif self.process == 41: # - Kiểm tra lộ trình thay đổi -> Cập nhật lệnh.
-				if self.target_id != self.server_cmdRequest.target_id:
 				# if self.target_x != self.server_cmdRequest.target_x or self.target_y != self.server_cmdRequest.target_y or self.target_z != self.server_cmdRequest.target_z: # - Reset - Update data.
-					# - Không cho phép đổi lệnh khi đang thực hiện thao tác đặc biệt:
+				# - Không cho phép đổi lệnh khi đang thực hiện thao tác đặc biệt:
+				if self.target_id != self.server_cmdRequest.target_id:
 					# - 1, Đang nhận/trả hàng.
-					condition_No1 = 0
-					condition_No2 = 0
-					condition_No3 = 0
-					condition_No4 = 0
-					# -
-					condition_No1_12 = 0
-					condition_No1_34 = 0
-					condition_No1_56 = 0
-					
-					if self.status_conveyor13.status == 1 or self.status_conveyor13.status == 2 or self.status_conveyor23.status == 1 or self.status_conveyor23.status == 2:
-						condition_No1_12 = 1
-					# -
-					if (self.status_conveyor12.status == 1 or self.status_conveyor12.status == 2 or self.status_conveyor22.status == 1 or self.status_conveyor22.status == 2):
-						condition_No1_34 = 1
-					# -
-					if (self.status_conveyor11.status == 1 or self.status_conveyor11.status == 2 or self.status_conveyor21.status == 1 or self.status_conveyor21.status == 2):
-						condition_No1_56 = 1
-
-					# -- add 17/03/2023: Lỗi AGV di chuyển khi thùng chưa sang hẳn (quy trình nhận thùng)
-					if self.status_conveyor13.status == 254 or self.status_conveyor13.status == 255 or self.status_conveyor23.status == 254 or self.status_conveyor23.status == 255:
-						condition_No1_12 = 1
-					# -
-					if self.status_conveyor12.status == 254 or self.status_conveyor12.status == 255 or self.status_conveyor22.status == 254 or self.status_conveyor22.status == 255:
-						condition_No1_34 = 1
-					# -
-					if self.status_conveyor11.status == 254 or self.status_conveyor11.status == 255 or self.status_conveyor21.status == 254 or self.status_conveyor21.status == 255:
-						condition_No1_56 = 1
-
-					# -- add 19/06/2023: Lỗi AGV di chuyển khi thùng chưa sang hẳn (Do cảm biến bị nhiễu -> AGV nhận lỗi)
-					if self.flagWarning_receivedRack11 == 1 or self.flagWarning_receivedRack21 == 1:
-						condition_No1_12 = 1
-
-					if self.flagWarning_receivedRack12 == 1 or self.flagWarning_receivedRack22 == 1:
-						condition_No1_34 = 1
-
-					if self.flagWarning_receivedRack13 == 1 or self.flagWarning_receivedRack23 == 1:
-						condition_No1_56 = 1
-
-					condition_No1 = condition_No1_12 + condition_No1_34 + condition_No1_56
-
-					# - 2, Đang Parking: Vào sạc.
-					if self.navigation_respond.modeMove == 2 and self.navigation_respond.status == 1 and self.navigation_respond.completed == 0:
-						condition_No2 = 1
-
-					# - 3, Đang đi ra khỏi sạc.
-					if self.navigation_respond.modeMove == 3 and self.navigation_respond.status == 1: # and self.navigation_respond.completed == 0:
-						# condition_No3 = 1
-						# self.flag_requirOutCharge = 1
-						if self.completed_moveSpecial == 0:
-							condition_No3 = 1
-
-					# - 4, Có dị vật trên băng tải -> Không cho di chuyển.
-					if self.status_CPD.input1 == 1 or self.status_CPD.input2 == 1:
-						condition_No4 = 1
+					(condition_No1, condition_No2, condition_No3, condition_No4) = self.check_AGVrun()
 
 					# -------------------
 					if condition_No1 != 0 or condition_No2 != 0 or condition_No3 != 0 or condition_No4 != 0:
 						self.log_mess("warn", "Have new target but must Waiting perform done ....", 0)
-						self.process = 42
+						self.process = 2                              # Archie check this
 						self.job_doing = 8
 					else:
 						self.resetAll_variable()
 						print ("--- ResetAll Variable ---")
 						self.process = 42
-					# --
-					self.Traffic_infoRespond.offset = 0
+
 				else:
 					# - Nếu target ID ko đổi mà nhiện vụ muốn thay đổi (lấy hoặc trả hàng luôn tại đó).
 					if self.completed_after_mission == 1:
 						if self.mission_after != self.server_cmdRequest.after_mission:
-							self.log_mess("info", "After mission change to ", self.server_cmdRequest.after_mission)
-							self.mission_after = self.server_cmdRequest.after_mission
-							# -
-							self.completed_after_mission = 0
-							self.completed_after_mission1 = 0
-							self.completed_moveSpecial = 0
-							self.completed_checkRack = 0
-							# -
-							self.flagWarning_rack11 = 0
-							self.flagWarning_rack12 = 0
-							self.flagWarning_rack13 = 0
-							self.flagWarning_rack21 = 0
-							self.flagWarning_rack22 = 0
-							self.flagWarning_rack23 = 0
-							# -
-							self.flagWarning_receivedRack11 = 0
-							self.flagWarning_receivedRack12 = 0
-							self.flagWarning_receivedRack13 = 0
-							self.flagWarning_receivedRack21 = 0
-							self.flagWarning_receivedRack22 = 0
-							self.flagWarning_receivedRack23 = 0
-							# -
-							self.listMission_completed = [0, 0, 0, 0, 0, 0]
-							
-					self.process = 42
+							(condition_No1, condition_No2, condition_No3, condition_No4) = self.check_AGVrun()
+							# -------------------
+							if condition_No1 != 0 or condition_No4 != 0:
+								self.log_mess("warn", "Have new target but must Waiting perform done ....", 0)
+								self.process = 2                              # Archie check this
+								self.job_doing = 8
+							else:
+														
+								self.log_mess("info", "After mission change to ", self.server_cmdRequest.after_mission)
+								self.mission_after = self.server_cmdRequest.after_mission
+								# -
+								self.completed_after_mission = 0
+								self.completed_after_mission1 = 0
+								self.completed_moveSpecial = 0
+								self.completed_checkRack = 0
+								# -
+								self.flagWarning_rack11 = 0
+								self.flagWarning_rack12 = 0
+								self.flagWarning_rack13 = 0
+								self.flagWarning_rack21 = 0
+								self.flagWarning_rack22 = 0
+								self.flagWarning_rack23 = 0
+								# -
+								self.flagWarning_receivedRack11 = 0
+								self.flagWarning_receivedRack12 = 0
+								self.flagWarning_receivedRack13 = 0
+								self.flagWarning_receivedRack21 = 0
+								self.flagWarning_receivedRack22 = 0
+								self.flagWarning_receivedRack23 = 0
+								# -
+
+								# -
+								self.listMission_completed = [0, 0, 0, 0, 0, 0]
+
+								self.process = 42
+						else:
+							self.process = 2
+							self.log_mess("info", "Have no new target....", 0)
+					else:			
+						self.process = 42
 
 			elif self.process == 42: # - Kiểm tra trạng thái sau khi điều khiển bằng tay.
 				if self.flag_Byhand_to_Auto == 1:
 					# - add 18/07/2023.
-					self.pub_cmdVel(Twist(), self.rate_cmdvel, rospy.get_time())
-					self.pub_cmdVel(Twist(), self.rate_cmdvel, rospy.get_time())
+					self.pub_cmdVel(Twist(), self.rate_cmdvel, rospy.get_time())                     # Archie need remove 
 					
 					# -- add 15/08/2023 - Kiểm tra vị trí có bị thay đổi không.
 					if self.completed_moveSimple == 1 and self.completed_moveSpecial == 1:
@@ -1802,7 +1899,7 @@ class ros_control():
 						# - Có dị vật trên băng tải -> Không cho di chuyển.
 						if self.status_CPD.input1 == 1 or self.status_CPD.input2 == 1:
 							self.enable_moving = 0
-							
+							self.pub_cmdVel(Twist(), self.rate_cmdvel, rospy.get_time())
 						# --
 						if self.navigation_respond.modeMove == 3 and self.navigation_respond.completed == 1:
 							self.completed_moveOut = 1
@@ -1828,6 +1925,7 @@ class ros_control():
 					# - Có dị vật trên băng tải -> Không cho di chuyển.
 					if self.status_CPD.input1 == 1 or self.status_CPD.input2 == 1:
 						self.enable_moving = 0
+						self.pub_cmdVel(Twist(), self.rate_cmdvel, rospy.get_time())
 					
 					self.navigation_query.modeMove = 4
 					# --
@@ -1872,6 +1970,7 @@ class ros_control():
 						# - Có dị vật trên băng tải -> Không cho di chuyển.
 						if self.status_CPD.input1 == 1 or self.status_CPD.input2 == 1:
 							self.enable_moving = 0
+							self.pub_cmdVel(Twist(), self.rate_cmdvel, rospy.get_time())
 
 						self.navigation_query.modeMove = 2
 						self.goalTarget.id = self.serverCmd_now.target_id
@@ -1901,6 +2000,7 @@ class ros_control():
 							# - Có dị vật trên băng tải -> Không cho di chuyển.
 							if self.status_CPD.input1 == 1 or self.status_CPD.input2 == 1:
 								self.enable_moving = 0
+								self.pub_cmdVel(Twist(), self.rate_cmdvel, rospy.get_time())
 
 							self.navigation_query.modeMove = 5
 							# -
@@ -1935,6 +2035,7 @@ class ros_control():
 								# - Có dị vật trên băng tải -> Không cho di chuyển.
 								if self.status_CPD.input1 == 1 or self.status_CPD.input2 == 1:
 									self.enable_moving = 0
+									self.pub_cmdVel(Twist(), self.rate_cmdvel, rospy.get_time())
 
 								self.navigation_query.modeMove = 5
 								# --
@@ -1963,6 +2064,7 @@ class ros_control():
 								# - Có dị vật trên băng tải -> Không cho di chuyển.
 								if self.status_CPD.input1 == 1 or self.status_CPD.input2 == 1:
 									self.enable_moving = 0
+									self.pub_cmdVel(Twist(), self.rate_cmdvel, rospy.get_time())
 
 								self.navigation_query.modeMove = 5
 								# -
@@ -1996,6 +2098,7 @@ class ros_control():
 								# - Có dị vật trên băng tải -> Không cho di chuyển.
 								if self.status_CPD.input1 == 1 or self.status_CPD.input2 == 1:
 									self.enable_moving = 0
+									self.pub_cmdVel(Twist(), self.rate_cmdvel, rospy.get_time())
 
 								self.navigation_query.modeMove = 5
 								# -
@@ -2028,6 +2131,7 @@ class ros_control():
 								# - Có dị vật trên băng tải -> Không cho di chuyển.
 								if self.status_CPD.input1 == 1 or self.status_CPD.input2 == 1:
 									self.enable_moving = 0
+									self.pub_cmdVel(Twist(), self.rate_cmdvel, rospy.get_time())
 
 								self.navigation_query.modeMove = 5
 								# -
@@ -2159,6 +2263,7 @@ class ros_control():
 					self.job_doing = 6
 					# - add 18/07/2023.
 					self.pub_cmdVel(Twist(), self.rate_cmdvel, rospy.get_time())
+					self.enable_moving = 0
 
 					count_box = 0
 					# - Xác nhận số thùng cần lấy.
@@ -2184,6 +2289,21 @@ class ros_control():
 						self.flagWarning_receivedRack21 = 0
 						self.flagWarning_receivedRack22 = 0
 						self.flagWarning_receivedRack23 = 0
+						# -
+						self.flagWarning_transfer11 = 0
+						self.flagWarning_transfer12 = 0
+						self.flagWarning_transfer13 = 0
+						self.flagWarning_transfer21 = 0
+						self.flagWarning_transfer22 = 0
+						self.flagWarning_transfer23 = 0
+						# -
+						print("step check bị reset ở process = 48")
+						self.step_check11 = 0
+						self.step_check12 = 0
+						self.step_check13 = 0
+						self.step_check21 = 0
+						self.step_check22 = 0
+						self.step_check23 = 0
 						
 					elif self.mission_after == 10 and self.mission_before == 66: # - Nhiệm vụ sạc.
 						self.completed_after_mission1 = 1
@@ -2334,24 +2454,165 @@ class ros_control():
 						elif self.mission_before == 1: # - Trả hàng.
 							# - Băng tải số 11.
 							if self.mission_after == 1: 
-								self.control_conveyors.No5_mission = self.conveyorTask_transmit
-								# -
-								if self.status_conveyor11.status == 4:
-									self.completed_after_mission1 = 1
+								if self.status_conveyor11.sensor_limitAhead == 1 or self.status_conveyor11.sensor_limitBehind == 1:
+									self.control_conveyors.No5_mission = self.conveyorTask_transmit
+								else:
+									if self.status_conveyor11.status == 4:
+										self.control_conveyors.No5_mission = self.conveyorTask_stop
+
+									if self.step_check11 == 0:
+										self.time_TrayOutofAGV = rospy.get_time()
+										self.step_check11 = 1
+
+									elif self.step_check11 == 1:
+										if rospy.get_time() - self.time_TrayOutofAGV >= 5:
+											if self.status_CPD.input2 == 1:
+												self.flagWarning_transfer11 = 1
+												self.process = 2
+												self.step_check11 = 0
+											else:
+												self.step_check11 = 2
+												self.time_TrayOutofAGV = rospy.get_time()
+												print("Băng tải đã trôi qua >> check lần 1 ")
+									elif self.step_check11 == 2:
+										if rospy.get_time() - self.time_TrayOutofAGV >= 1:
+											if self.status_CPD.input2 == 1:
+												self.flagWarning_transfer11 = 1
+												self.process = 2
+												self.step_check11 = 0
+											else:
+												self.step_check11 = 3
+												self.time_TrayOutofAGV = rospy.get_time()
+												print("Băng tải đã trôi qua >> check lần 2 ")
+									elif self.step_check11 == 3:
+										if rospy.get_time() - self.time_TrayOutofAGV >= 1:
+											if self.status_CPD.input2 == 1:
+												self.flagWarning_transfer11 = 1
+												self.process = 2
+												self.step_check11 = 0
+											else:
+												self.step_check11 = 4
+												self.time_TrayOutofAGV = rospy.get_time()
+												print("Băng tải đã trôi qua >> check lần 3 ")
+									elif self.step_check11 == 4:
+										if rospy.get_time() - self.time_TrayOutofAGV >= 1:
+											if self.status_CPD.input2 == 1:
+												self.flagWarning_transfer11 = 1
+												self.process = 2
+												self.step_check11 = 0
+											else:
+												self.completed_after_mission1 = 1
+												self.time_TrayOutofAGV = rospy.get_time()
+												self.step_check11 = 0
+												print("Băng tải đã trôi qua >> check lần 4 - Hoàn thành ")
 
 							# - Băng tải số 12.
-							elif self.mission_after == 2:
-								self.control_conveyors.No3_mission = self.conveyorTask_transmit
-								# -
-								if self.status_conveyor12.status == 4:
-									self.completed_after_mission1 = 1
+							elif self.mission_after == 2: 
+								if self.status_conveyor12.sensor_limitAhead == 1 or self.status_conveyor12.sensor_limitBehind == 1:
+									self.control_conveyors.No3_mission = self.conveyorTask_transmit
+								else:
+									if self.status_conveyor12.status == 4:
+										self.control_conveyors.No3_mission = self.conveyorTask_stop
+
+									if self.step_check12 == 0:
+										self.time_TrayOutofAGV = rospy.get_time()
+										self.step_check12 = 1
+
+									elif self.step_check12 == 1:
+										if rospy.get_time() - self.time_TrayOutofAGV >= 5:
+											if self.status_CPD.input2 == 1:
+												self.flagWarning_transfer12 = 1
+												self.process = 2
+												self.step_check12 = 0
+											else:
+												self.step_check12 = 2
+												self.time_TrayOutofAGV = rospy.get_time()
+												print("Băng tải đã trôi qua >> check lần 1 ")
+									elif self.step_check12 == 2:
+										if rospy.get_time() - self.time_TrayOutofAGV >= 1:
+											if self.status_CPD.input2 == 1:
+												self.flagWarning_transfer12 = 1
+												self.process = 2
+												self.step_check12 = 0
+											else:
+												self.step_check12 = 3
+												self.time_TrayOutofAGV = rospy.get_time()
+												print("Băng tải đã trôi qua >> check lần 2 ")
+									elif self.step_check12 == 3:
+										if rospy.get_time() - self.time_TrayOutofAGV >= 1:
+											if self.status_CPD.input2 == 1:
+												self.flagWarning_transfer12 = 1
+												self.process = 2
+												self.step_check12 = 0
+											else:
+												self.step_check12 = 4
+												self.time_TrayOutofAGV = rospy.get_time()
+												print("Băng tải đã trôi qua >> check lần 3 ")
+									elif self.step_check12 == 4:
+										if rospy.get_time() - self.time_TrayOutofAGV >= 1:
+											if self.status_CPD.input2 == 1:
+												self.flagWarning_transfer12 = 1
+												self.process = 2
+												self.step_check12 = 0
+											else:
+												self.completed_after_mission1 = 1
+												self.time_TrayOutofAGV = rospy.get_time()
+												self.step_check12 = 0
+												print("Băng tải đã trôi qua >> check lần 4 - Hoàn thành ")
 
 							# - Băng tải số 13.
 							elif self.mission_after == 3:
-								self.control_conveyors.No1_mission = self.conveyorTask_transmit
-								# -
-								if self.status_conveyor13.status == 4:
-									self.completed_after_mission1 = 1
+								if self.status_conveyor13.sensor_limitAhead == 1 or self.status_conveyor13.sensor_limitBehind == 1:
+									self.control_conveyors.No1_mission = self.conveyorTask_transmit
+								else:
+									if self.status_conveyor13.status == 4:
+										self.control_conveyors.No1_mission = self.conveyorTask_stop
+
+									if self.step_check13 == 0:
+										self.time_TrayOutofAGV = rospy.get_time()
+										self.step_check13 = 1
+
+									elif self.step_check13 == 1:
+										if rospy.get_time() - self.time_TrayOutofAGV >= 5:
+											if self.status_CPD.input2 == 1:
+												self.flagWarning_transfer13 = 1
+												self.process = 2
+												self.step_check13 = 0
+											else:
+												self.step_check13 = 2
+												self.time_TrayOutofAGV = rospy.get_time()
+												print("Băng tải đã trôi qua >> check lần 1 ")
+									elif self.step_check13 == 2:
+										if rospy.get_time() - self.time_TrayOutofAGV >= 1:
+											if self.status_CPD.input2 == 1:
+												self.flagWarning_transfer13 = 1
+												self.process = 2
+												self.step_check13 = 0
+											else:
+												self.step_check13 = 3
+												self.time_TrayOutofAGV = rospy.get_time()
+												print("Băng tải đã trôi qua >> check lần 2 ")
+									elif self.step_check13 == 3:
+										if rospy.get_time() - self.time_TrayOutofAGV >= 1:
+											if self.status_CPD.input2 == 1:
+												self.flagWarning_transfer13 = 1
+												self.process = 2
+												self.step_check13 = 0
+											else:
+												self.step_check13 = 4
+												self.time_TrayOutofAGV = rospy.get_time()
+												print("Băng tải đã trôi qua >> check lần 3 ")
+									elif self.step_check13 == 4:
+										if rospy.get_time() - self.time_TrayOutofAGV >= 1:
+											if self.status_CPD.input2 == 1:
+												self.flagWarning_transfer13 = 1
+												self.process = 2
+												self.step_check13 = 0
+											else:
+												self.completed_after_mission1 = 1
+												self.time_TrayOutofAGV = rospy.get_time()
+												self.step_check13 = 0
+												print("Băng tải đã trôi qua >> check lần 4 - Hoàn thành ")
 							else:
 								self.completed_after_mission1 = 1
 
@@ -2386,6 +2647,21 @@ class ros_control():
 						self.flagWarning_receivedRack21 = 0
 						self.flagWarning_receivedRack22 = 0
 						self.flagWarning_receivedRack23 = 0
+						# -
+						self.flagWarning_transfer11 = 0
+						self.flagWarning_transfer12 = 0
+						self.flagWarning_transfer13 = 0
+						self.flagWarning_transfer21 = 0
+						self.flagWarning_transfer22 = 0
+						self.flagWarning_transfer23 = 0
+						# -
+						print("step check bị reset ở process = 49")
+						self.step_check11 = 0
+						self.step_check12 = 0
+						self.step_check13 = 0
+						self.step_check21 = 0
+						self.step_check22 = 0
+						self.step_check23 = 0
 						
 					elif self.mission_after == 10 and self.mission_before == 66: # - Nhiệm vụ sạc.
 						self.completed_after_mission = 1
@@ -2467,24 +2743,165 @@ class ros_control():
 						elif self.mission_before == 1: # - Trả hàng.
 							# - Băng tải số 21.
 							if self.mission_after == 4:
-								self.control_conveyors.No6_mission = self.conveyorTask_transmit
-								# -
-								if self.status_conveyor21.status == 4:
-									self.completed_after_mission = 1
+								if self.status_conveyor21.sensor_limitAhead == 1 or self.status_conveyor21.sensor_limitBehind == 1:
+									self.control_conveyors.No6_mission = self.conveyorTask_transmit
+								else:
+									if self.status_conveyor21.status == 4:
+										self.control_conveyors.No6_mission = self.conveyorTask_stop
+
+									if self.step_check21 == 0:
+										self.time_TrayOutofAGV = rospy.get_time()
+										self.step_check21 = 1
+
+									elif self.step_check21 == 1:
+										if rospy.get_time() - self.time_TrayOutofAGV >= 5:
+											if self.status_CPD.input1 == 1:
+												self.flagWarning_transfer21 = 1
+												self.process = 2
+												self.step_check21 = 0
+											else:
+												self.step_check21 = 2
+												self.time_TrayOutofAGV = rospy.get_time()
+												print("Băng tải đã trôi qua >> check lần 1 ")
+									elif self.step_check21 == 2:
+										if rospy.get_time() - self.time_TrayOutofAGV >= 1:
+											if self.status_CPD.input1 == 1:
+												self.flagWarning_transfer21 = 1
+												self.process = 2
+												self.step_check21 = 0
+											else:
+												self.step_check21 = 3
+												self.time_TrayOutofAGV = rospy.get_time()
+												print("Băng tải đã trôi qua >> check lần 2 ")
+									elif self.step_check21 == 3:
+										if rospy.get_time() - self.time_TrayOutofAGV >= 1:
+											if self.status_CPD.input1 == 1:
+												self.flagWarning_transfer21 = 1
+												self.process = 2
+												self.step_check21 = 0
+											else:
+												self.step_check21 = 4
+												self.time_TrayOutofAGV = rospy.get_time()
+												print("Băng tải đã trôi qua >> check lần 3 ")
+									elif self.step_check21 == 4:
+										if rospy.get_time() - self.time_TrayOutofAGV >= 1:
+											if self.status_CPD.input1 == 1:
+												self.flagWarning_transfer21 = 1
+												self.process = 2
+												self.step_check21 = 0
+											else:
+												self.completed_after_mission = 1
+												self.time_TrayOutofAGV = rospy.get_time()
+												self.step_check21 = 0
+												print("Băng tải đã trôi qua >> check lần 4 - Hoàn thành ")					
 
 							# - Băng tải số 22.
 							elif self.mission_after == 5:
-								self.control_conveyors.No4_mission = self.conveyorTask_transmit
-								# -
-								if self.status_conveyor22.status == 4:
-									self.completed_after_mission = 1
+								if self.status_conveyor22.sensor_limitAhead == 1 or self.status_conveyor22.sensor_limitBehind == 1:
+									self.control_conveyors.No4_mission = self.conveyorTask_transmit
+								else:
+									if self.status_conveyor22.status == 4:
+										self.control_conveyors.No4_mission = self.conveyorTask_stop
+
+									if self.step_check22 == 0:
+										self.time_TrayOutofAGV = rospy.get_time()
+										self.step_check22 = 1
+
+									elif self.step_check22 == 1:
+										if rospy.get_time() - self.time_TrayOutofAGV >= 5:
+											if self.status_CPD.input1 == 1:
+												self.flagWarning_transfer22 = 1
+												self.process = 2
+												self.step_check22 = 0
+											else:
+												self.step_check22 = 2
+												self.time_TrayOutofAGV = rospy.get_time()
+												print("Băng tải đã trôi qua >> check lần 1 ")
+									elif self.step_check22 == 2:
+										if rospy.get_time() - self.time_TrayOutofAGV >= 1:
+											if self.status_CPD.input1 == 1:
+												self.flagWarning_transfer22 = 1
+												self.process = 2
+												self.step_check22 = 0
+											else:
+												self.step_check22 = 3
+												self.time_TrayOutofAGV = rospy.get_time()
+												print("Băng tải đã trôi qua >> check lần 2 ")
+									elif self.step_check22 == 3:
+										if rospy.get_time() - self.time_TrayOutofAGV >= 1:
+											if self.status_CPD.input1 == 1:
+												self.flagWarning_transfer22 = 1
+												self.process = 2
+												self.step_check22 = 0
+											else:
+												self.step_check22 = 4
+												self.time_TrayOutofAGV = rospy.get_time()
+												print("Băng tải đã trôi qua >> check lần 3 ")
+									elif self.step_check22 == 4:
+										if rospy.get_time() - self.time_TrayOutofAGV >= 1:
+											if self.status_CPD.input1 == 1:
+												self.flagWarning_transfer22 = 1
+												self.process = 2
+												self.step_check22 = 0
+											else:
+												self.completed_after_mission = 1
+												self.time_TrayOutofAGV = rospy.get_time()
+												self.step_check22 = 0
+												print("Băng tải đã trôi qua >> check lần 4 - Hoàn thành ")		
 
 							# - Băng tải số  CY23.
 							elif self.mission_after == 6:
-								self.control_conveyors.No2_mission = self.conveyorTask_transmit
-								# -
-								if self.status_conveyor23.status == 4:
-									self.completed_after_mission = 1
+								if self.status_conveyor23.sensor_limitAhead == 1 or self.status_conveyor23.sensor_limitBehind == 1:
+									self.control_conveyors.No2_mission = self.conveyorTask_transmit
+								else:
+									if self.status_conveyor23.status == 4:
+										self.control_conveyors.No2_mission = self.conveyorTask_stop
+
+									if self.step_check23 == 0:
+										self.time_TrayOutofAGV = rospy.get_time()
+										self.step_check23 = 1
+
+									elif self.step_check23 == 1:
+										if rospy.get_time() - self.time_TrayOutofAGV >= 5:
+											if self.status_CPD.input1 == 1:
+												self.flagWarning_transfer23 = 1
+												self.process = 2
+												self.step_check23 = 0
+											else:
+												self.step_check23 = 2
+												self.time_TrayOutofAGV = rospy.get_time()
+												print("Băng tải đã trôi qua >> check lần 1 ")
+									elif self.step_check23 == 2:
+										if rospy.get_time() - self.time_TrayOutofAGV >= 1:
+											if self.status_CPD.input1 == 1:
+												self.flagWarning_transfer23 = 1
+												self.process = 2
+												self.step_check23 = 0
+											else:
+												self.step_check23 = 3
+												self.time_TrayOutofAGV = rospy.get_time()
+												print("Băng tải đã trôi qua >> check lần 2 ")
+									elif self.step_check23 == 3:
+										if rospy.get_time() - self.time_TrayOutofAGV >= 1:
+											if self.status_CPD.input1 == 1:
+												self.flagWarning_transfer23 = 1
+												self.process = 2
+												self.step_check23 = 0
+											else:
+												self.step_check23 = 4
+												self.time_TrayOutofAGV = rospy.get_time()
+												print("Băng tải đã trôi qua >> check lần 3 ")
+									elif self.step_check23 == 4:
+										if rospy.get_time() - self.time_TrayOutofAGV >= 1:
+											if self.status_CPD.input1 == 1:
+												self.flagWarning_transfer23 = 1
+												self.process = 2
+												self.step_check23 = 0
+											else:
+												self.completed_after_mission = 1
+												self.time_TrayOutofAGV = rospy.get_time()
+												self.step_check23 = 0
+												print("Băng tải đã trôi qua >> check lần 4 - Hoàn thành ")		
 							else:
 								self.completed_after_mission = 1
 								
@@ -2530,6 +2947,12 @@ class ros_control():
 				self.Traffic_infoRespond.task_status = self.mission_after
 			else:
 				self.Traffic_infoRespond.task_status = 0
+			
+			# -- 
+			self.data_taskStatus.checkrack_status = self.completed_checkRack
+			self.data_taskStatus.after_mission1_status = self.completed_after_mission1
+			self.data_taskStatus.after_mission_status = self.completed_after_mission
+			self.pub_taskStatus.publish(self.data_taskStatus)
 
 			# -- Battery - ok
 			self.readbatteryVoltage()
@@ -2580,7 +3003,7 @@ class ros_control():
 					if self.completed_after_mission == 1 and self.mode_operate == self.md_auto and self.mission_after == 10 and self.mission_before == 66:
 						# print ("NOW HERE")
 						if self.charger_write == self.charger_on:
-							if self.main_info.charge_current >= self.charger_valueOrigin :
+							if self.main_info.charge_current >= self.charger_valueOrigin:
 								self.speaker_effect = self.spk_off
 								self.flag_notCharger = 0
 							else:

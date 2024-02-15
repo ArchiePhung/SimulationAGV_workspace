@@ -39,3 +39,7 @@ roslaunch launch_pkg run_shiv12_AGVcvo.launch
 13. Test code AGVL600 real in SHIV34 
 Case: Tray is not transferd completely, and it lie between AGV and CY
 roslaunch launch_pkg run_CY34_case1.launch
+
+14. Test code AGV-TOWING-DEMO in SHIV12
+roslaunch launch_pkg run_TOW12_demo.launch
+ 

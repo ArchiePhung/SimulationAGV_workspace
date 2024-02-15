@@ -1479,7 +1479,7 @@ class Program(threading.Thread):
 		self.widget.addWidget(self.welcomeScreen)
 		self.widget.setFixedHeight(580)
 		self.widget.setFixedWidth(1024)
-		self.widget.setWindowFlag(Qt.FramelessWindowHint)
+		# self.widget.setWindowFlag(Qt.FramelessWindowHint)
 		# --
 		self.valueLable = valueLable()
 		self.statusColor = statusColor()
@@ -1840,7 +1840,13 @@ class Program(threading.Thread):
 			# -
 			497:'Có Dị vật tại Tầng dưới băng tải', #
 			498:'Có Dị vật tại Tầng trên băng tải', #
-
+			# -
+			301:'AGV trả mắc thùng hàng 11',
+			302:'AGV trả mắc thùng hàng 12',
+			303:'AGV trả mắc thùng hàng 13',
+			304:'AGV trả mắc thùng hàng 21',			
+			305:'AGV trả mắc thùng hàng 22',
+			306:'AGV trả mắc thùng hàng 23',
 			# - add 22/12/2023
 			391:'Không phát hiện vị trí băng tải nhận 11', # 
 			392:'Không phát hiện vị trí băng tải nhận 12', #

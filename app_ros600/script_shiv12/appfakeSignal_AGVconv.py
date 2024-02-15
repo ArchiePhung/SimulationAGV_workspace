@@ -417,20 +417,20 @@ class Program(threading.Thread):
 		rospy.Subscriber("/AGVToyo_signal", Signal_AGVToyo, self.callBack_AGVToyo_signal)
 		self.AGVToyo_signal = Signal_AGVToyo()
 		# --
-		self.pub_signalConveyor11 = rospy.Publisher("/signal_conveyor11", Signal_ConveyorAGV, queue_size = 4)
-		self.data_signalConveyor11 = Signal_ConveyorAGV()
+		self.pub_signalConveyor11 = rospy.Publisher("/signal_conveyor11", Signal_conveyor, queue_size = 4)
+		self.signal_conveyor11 = Signal_conveyor()
 		# --
-		self.pub_signalConveyor12 = rospy.Publisher("/signal_conveyor12", Signal_ConveyorAGV, queue_size = 4)
-		self.data_signalConveyor12 = Signal_ConveyorAGV()
+		self.pub_signalConveyor12 = rospy.Publisher("/signal_conveyor12", Signal_conveyor, queue_size = 4)
+		self.signal_conveyor12 = Signal_conveyor()
 		# --
-		self.pub_signalConveyor21 = rospy.Publisher("/signal_conveyor21", Signal_ConveyorAGV, queue_size = 4)
-		self.data_signalConveyor21 = Signal_ConveyorAGV()
+		self.pub_signalConveyor21 = rospy.Publisher("/signal_conveyor21", Signal_conveyor, queue_size = 4)
+		self.signal_conveyor21 = Signal_conveyor()
 		# --
-		self.pub_signalConveyor22 = rospy.Publisher("/signal_conveyor22", Signal_ConveyorAGV, queue_size = 4)
-		self.data_signalConveyor22 = Signal_ConveyorAGV()
+		self.pub_signalConveyor22 = rospy.Publisher("/signal_conveyor22", Signal_conveyor, queue_size = 4)
+		self.signal_conveyor22 = Signal_conveyor()
 		# --
-		self.pub_signalConveyorToyo = rospy.Publisher("/signal_conveyorToyo", Signal_ConveyorToyo, queue_size = 4)
-		self.data_signalConveyorToyo = Signal_ConveyorToyo()
+		self.pub_signalConveyorToyo = rospy.Publisher("/signal_CYMToyo", Signal_CYMToyo, queue_size = 4)
+		self.signal_CYMToyo = Signal_CYMToyo()
 
 	def callBack_AGVToyo_signal(self, data):
 		self.AGVToyo_signal = data
@@ -487,61 +487,61 @@ class Program(threading.Thread):
 
 	def controlColor(self):
 		# -- AGV Toyo signal
-		self.statusColor.lbc_agvToyoBit1 = self.AGVToyo_signal.signal_toyoBit1
-		self.statusColor.lbc_agvToyoBit2 = self.AGVToyo_signal.signal_toyoBit2
-		self.statusColor.lbc_agvToyoBit3 = self.AGVToyo_signal.signal_toyoBit3
-		self.statusColor.lbc_agvToyoBit4 = self.AGVToyo_signal.signal_toyoBit4
-		self.statusColor.lbc_agvToyoBit5_connected = self.AGVToyo_signal.signal_toyoBit5_connected
-		self.statusColor.lbc_agvToyoBit6_done = self.AGVToyo_signal.signal_toyoBit6_done
-		self.statusColor.lbc_agvToyoBit7_ready = self.AGVToyo_signal.signal_toyoBit7_ready
-		self.statusColor.lbc_agvToyoBit8_error = self.AGVToyo_signal.signal_toyoBit8_error
+		self.statusColor.lbc_agvToyoBit1 = self.AGVToyo_signal.bit1
+		self.statusColor.lbc_agvToyoBit2 = self.AGVToyo_signal.bit2
+		self.statusColor.lbc_agvToyoBit3 = self.AGVToyo_signal.bit3
+		self.statusColor.lbc_agvToyoBit4 = self.AGVToyo_signal.bit4
+		self.statusColor.lbc_agvToyoBit5_connected = self.AGVToyo_signal.bit5_cnt
+		self.statusColor.lbc_agvToyoBit6_done = self.AGVToyo_signal.bit6_done
+		self.statusColor.lbc_agvToyoBit7_ready = self.AGVToyo_signal.bit7_rdy
+		self.statusColor.lbc_agvToyoBit8_error = self.AGVToyo_signal.bit8_err
 
-		if self.AGVToyo_signal.signal_toyoBit6_done == 1:
+		if self.AGVToyo_signal.bit6_done == 1:
 			self.welcomeScreen.statusButton.bt_cvoToyoBit1 = 0
 			self.welcomeScreen.statusButton.bt_cvoToyoBit2 = 0
 			self.welcomeScreen.statusButton.bt_cvoToyoBit3 = 0
 			self.welcomeScreen.statusButton.bt_cvoToyoBit4 = 0
-			self.welcomeScreen.statusButton.bt_cvoToyoBit5_connected = 0
+			# self.welcomeScreen.statusButton.bt_cvoToyoBit5_connected = 0
 			self.welcomeScreen.statusButton.bt_cvoToyoBit6_done = 0
-			self.welcomeScreen.statusButton.bt_cvoToyoBit7_ready = 0
+			# self.welcomeScreen.statusButton.bt_cvoToyoBit7_ready = 0
 			self.welcomeScreen.statusButton.bt_cvoToyoBit8_error = 0		
 
 	def readButton(self):
 		# -- 
-		self.data_signalConveyor11.signal_limitAhead = self.welcomeScreen.statusButton.bt_limitAhead11
-		self.data_signalConveyor11.signal_limitBehind = self.welcomeScreen.statusButton.bt_limitBehind11
-		self.data_signalConveyor11.signal_ssCheckTray = self.welcomeScreen.statusButton.bt_ssCheckTray11
+		self.signal_conveyor11.sensor_limitAhead = self.welcomeScreen.statusButton.bt_limitAhead11
+		self.signal_conveyor11.sensor_limitBehind = self.welcomeScreen.statusButton.bt_limitBehind11
+		self.signal_conveyor11.sensor_checkItem = self.welcomeScreen.statusButton.bt_ssCheckTray11
 
 		# -- 
-		self.data_signalConveyor12.signal_limitAhead = self.welcomeScreen.statusButton.bt_limitAhead12
-		self.data_signalConveyor12.signal_limitBehind = self.welcomeScreen.statusButton.bt_limitBehind12
-		self.data_signalConveyor12.signal_ssCheckTray = self.welcomeScreen.statusButton.bt_ssCheckTray12
+		self.signal_conveyor12.sensor_limitAhead = self.welcomeScreen.statusButton.bt_limitAhead12
+		self.signal_conveyor12.sensor_limitBehind = self.welcomeScreen.statusButton.bt_limitBehind12
+		self.signal_conveyor12.sensor_checkItem = self.welcomeScreen.statusButton.bt_ssCheckTray12
 
 		# --
-		self.data_signalConveyor21.signal_limitAhead = self.welcomeScreen.statusButton.bt_limitAhead21
-		self.data_signalConveyor21.signal_limitBehind = self.welcomeScreen.statusButton.bt_limitBehind21
-		self.data_signalConveyor21.signal_ssCheckTray = self.welcomeScreen.statusButton.bt_ssCheckTray21
+		self.signal_conveyor21.sensor_limitAhead = self.welcomeScreen.statusButton.bt_limitAhead21
+		self.signal_conveyor21.sensor_limitBehind = self.welcomeScreen.statusButton.bt_limitBehind21
+		self.signal_conveyor21.sensor_checkItem = self.welcomeScreen.statusButton.bt_ssCheckTray21
 		
 		# --
-		self.data_signalConveyor22.signal_limitAhead = self.welcomeScreen.statusButton.bt_limitAhead22
-		self.data_signalConveyor22.signal_limitBehind = self.welcomeScreen.statusButton.bt_limitBehind22
-		self.data_signalConveyor22.signal_ssCheckTray = self.welcomeScreen.statusButton.bt_ssCheckTray22
+		self.signal_conveyor22.sensor_limitAhead = self.welcomeScreen.statusButton.bt_limitAhead22
+		self.signal_conveyor22.sensor_limitBehind = self.welcomeScreen.statusButton.bt_limitBehind22
+		self.signal_conveyor22.sensor_checkItem = self.welcomeScreen.statusButton.bt_ssCheckTray22
 
 		# -- Signal of Conveyor Toyo 
-		self.data_signalConveyorToyo.signal_toyoBit1 = self.welcomeScreen.statusButton.bt_cvoToyoBit1
-		self.data_signalConveyorToyo.signal_toyoBit2 = self.welcomeScreen.statusButton.bt_cvoToyoBit2
-		self.data_signalConveyorToyo.signal_toyoBit3 = self.welcomeScreen.statusButton.bt_cvoToyoBit3
-		self.data_signalConveyorToyo.signal_toyoBit4 = self.welcomeScreen.statusButton.bt_cvoToyoBit4
-		self.data_signalConveyorToyo.signal_toyoBit5_connected = self.welcomeScreen.statusButton.bt_cvoToyoBit5_connected
-		self.data_signalConveyorToyo.signal_toyoBit6_done = self.welcomeScreen.statusButton.bt_cvoToyoBit6_done
-		self.data_signalConveyorToyo.signal_toyoBit7_ready = self.welcomeScreen.statusButton.bt_cvoToyoBit7_ready
-		self.data_signalConveyorToyo.signal_toyoBit8_error = self.welcomeScreen.statusButton.bt_cvoToyoBit8_error
+		self.signal_CYMToyo.bit1 = self.welcomeScreen.statusButton.bt_cvoToyoBit1
+		self.signal_CYMToyo.bit2 = self.welcomeScreen.statusButton.bt_cvoToyoBit2
+		self.signal_CYMToyo.bit3 = self.welcomeScreen.statusButton.bt_cvoToyoBit3
+		self.signal_CYMToyo.bit4 = self.welcomeScreen.statusButton.bt_cvoToyoBit4
+		self.signal_CYMToyo.bit5_cnt = self.welcomeScreen.statusButton.bt_cvoToyoBit5_connected
+		self.signal_CYMToyo.bit6_done = self.welcomeScreen.statusButton.bt_cvoToyoBit6_done
+		self.signal_CYMToyo.bit7_rdy = self.welcomeScreen.statusButton.bt_cvoToyoBit7_ready
+		self.signal_CYMToyo.bit8_err = self.welcomeScreen.statusButton.bt_cvoToyoBit8_error
 		
 	def readLineEdit(self):
-		self.data_signalConveyor11.status = self.welcomeScreen.statusConveyor.cvoState11
-		self.data_signalConveyor12.status = self.welcomeScreen.statusConveyor.cvoState12
-		self.data_signalConveyor21.status = self.welcomeScreen.statusConveyor.cvoState21
-		self.data_signalConveyor22.status = self.welcomeScreen.statusConveyor.cvoState22
+		self.signal_conveyor11.status = self.welcomeScreen.statusConveyor.cvoState11
+		self.signal_conveyor12.status = self.welcomeScreen.statusConveyor.cvoState12
+		self.signal_conveyor21.status = self.welcomeScreen.statusConveyor.cvoState21
+		self.signal_conveyor22.status = self.welcomeScreen.statusConveyor.cvoState22
 
 	def run(self):
 		# -- 
@@ -553,11 +553,11 @@ class Program(threading.Thread):
 			# --
 			self.readLineEdit()
 
-			self.pub_signalConveyor11.publish(self.data_signalConveyor11)
-			self.pub_signalConveyor12.publish(self.data_signalConveyor12)
-			self.pub_signalConveyor21.publish(self.data_signalConveyor21)
-			self.pub_signalConveyor22.publish(self.data_signalConveyor22)
-			self.pub_signalConveyorToyo.publish(self.data_signalConveyorToyo)
+			self.pub_signalConveyor11.publish(self.signal_conveyor11)
+			self.pub_signalConveyor12.publish(self.signal_conveyor12)
+			self.pub_signalConveyor21.publish(self.signal_conveyor21)
+			self.pub_signalConveyor22.publish(self.signal_conveyor22)
+			self.pub_signalConveyorToyo.publish(self.signal_CYMToyo)
 			# ----------------------
 			self.welcomeScreen.statusColor = self.statusColor
 

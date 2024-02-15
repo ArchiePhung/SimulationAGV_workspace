@@ -1,8 +1,9 @@
-bool signal_toyoBit1
-bool signal_toyoBit2
-bool signal_toyoBit3
-bool signal_toyoBit4
-bool signal_toyoBit5_connected
-bool signal_toyoBit6_done
-bool signal_toyoBit7_ready
-bool signal_toyoBit8_error
+# output
+bool bit1
+bool bit2
+bool bit3
+bool bit4
+bool bit5_cnt              # bit connected
+bool bit6_done			   # bit done
+bool bit7_rdy              # bit ready
+bool bit8_err              # bit error

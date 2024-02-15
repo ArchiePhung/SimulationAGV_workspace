@@ -12,6 +12,7 @@ Vấn đề hiện tại:
 14/12/2023: AGV mô phỏng đã chạy được theo lộ trình gửi xuống, nhưng đang chỉ theo một chiều ???
      + Nếu chạy theo chiều đúng, thì nếu để góc AGV = 0 >> thì AGV chạy sai
      + Chạy chiều bị sai, AGV phải quay 180 rồi ms bám vào đường lộ trình. 
+     >> code này của AGV forklift, nạp code của con AGV kéo vô xem nào
 
 
 Xác nhận kết quả: 
