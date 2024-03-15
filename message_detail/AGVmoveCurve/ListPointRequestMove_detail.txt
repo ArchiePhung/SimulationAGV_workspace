@@ -1,0 +1,24 @@
+Pub: MakePathbyPoint
+Sub: Goal_control
+Topic: list_pointRequestMove
+
+ListPointRequestMove define:
+
+x	int32 enable                                      : Cho phép di chuyển  
+x	float64 target_x                                  : tọa độ x điểm target
+x	float64 target_y                                  : tọa độ y điểm target 
+x	float64 target_z                                  : tọa độ z điểm target
+x	float64 offset                                    : khoảng offset
+x	sti_msgs/PointRequestMove[] infoPoint
+x			int16 pathID
+x			int16 typePath
+x			int8 direction
+x			float64 velocity
+x			float64 movableZone
+			geometry_msgs/Pose pose
+
+xx	sti_msgs/StopPoint[] infoStopPoint                : Điểm AGV dừng thao tác (AGV kéo)
+	int32 enableStop
+	sti_msgs/StopPoint pointStopAvoid 
+x	int32 mission
+x	string mess

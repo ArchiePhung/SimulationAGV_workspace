@@ -112,13 +112,13 @@ class rickshaw_navigation():
 		self.powerInfo = POWER_info()
 		self.is_main = 0
 		# --
-		# rospy.Subscriber("/robotPose_nav", PoseStamped, self.callback_robotPoseNAV)
-		# self.robotPoseNAV = PoseStamped()
-		# self.is_robotPoseNAV = 0
-
-		rospy.Subscriber('/agv_pose', Pose, self.callback_robotPoseNAV, queue_size = 20)
+		rospy.Subscriber("/robotPose_nav", PoseStamped, self.callback_robotPoseNAV)
 		self.robotPoseNAV = PoseStamped()
 		self.is_robotPoseNAV = 0
+
+		# rospy.Subscriber('/agv_pose', Pose, self.callback_robotPoseNAV, queue_size = 20)
+		# self.robotPoseNAV = PoseStamped()
+		# self.is_robotPoseNAV = 0
 
 		# --
 		rospy.Subscriber("/robot_pose", PoseStamped, self.callback_robotPose2)
@@ -260,7 +260,7 @@ class rickshaw_navigation():
 		self.is_navigationQuery = 1
 		
 	def callback_robotPoseNAV(self, data):
-		self.robotPoseNAV.pose = data
+		self.robotPoseNAV = data
 		self.is_robotPoseNAV = 1
 
 	def callback_robotPose2(self, data):

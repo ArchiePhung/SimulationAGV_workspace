@@ -50,7 +50,7 @@ class Fake_stiClient():
         rospy.init_node('stiClient_fake', anonymous=False)
         
         # -- node publish -- 
-        self.pub_requestMove = rospy.Publisher('/move_request', LineRequestMove, queue_size = 10)
+        self.pub_requestMove = rospy.Publisher('/request_move', LineRequestMove, queue_size = 10)
         self.dataRequestMove = LineRequestMove()
         self.dataRequestMove.pathInfo = [PathInfo()]
         self.rate = rospy.Rate(10.0)
@@ -80,6 +80,7 @@ class Fake_stiClient():
         self.numberPts = 0
         self.pointMid = Pose()
         self.movableZone = 0  
+        self.fieldSafety = 0
 
         self.enableStop = 0
         self.pointStopAvoid = StopPoint()
@@ -108,8 +109,8 @@ class Fake_stiClient():
                 if time.time() - self.DieTime_pub < 3:                   # chờ 2s rồi pub lộ trình tiếp theo
                     self.enable = 1
                     self.target_id = 1
-                    self.target_x = 5.0
-                    self.target_y = 5.0
+                    self.target_x = 10.0
+                    self.target_y = 10.0
                     self.target_z = 0.0 
                     self.offset = 1.0
                     self.mission = 1
@@ -117,21 +118,23 @@ class Fake_stiClient():
 
                     self.pathID = 1
                     self.typePath = self.quadraticBezierCurves
-                    self.direction = 0
+                    self.direction = 1
                     self.pointOne.position.x = 0.0
                     self.pointOne.position.y = 0.0
-                    self.pointSecond.position.x = 5.0
-                    self.pointSecond.position.y = 5.0
-                    self.velocity = 0.2
+                    self.pointSecond.position.x = 10.0
+                    self.pointSecond.position.y = 10.0
+                    self.velocity = 0.8
                     self.radius = 0.0
                     self.pointCenter = Pose()
-                    self.numberPts = 100
+                    self.numberPts = 1000
                     self.pointMid.position.x = 0.0
-                    self.pointMid.position.y = 5.0
-                    self.movableZone = 0
+                    self.pointMid.position.y = 10.0
+                    self.movableZone = 5.0
+                    self.fieldSafety = 0
 
                 else:
                     self.dataRequestMove.enable = self.enable
+                    self.dataRequestMove.target_id = self.target_id
                     self.dataRequestMove.target_x = self.target_x
                     self.dataRequestMove.target_y = self.target_y
                     self.dataRequestMove.target_z = self.target_z
@@ -152,7 +155,8 @@ class Fake_stiClient():
                     self.dataRequestMove.pathInfo[0].numberPts = self.numberPts
                     self.dataRequestMove.pathInfo[0].pointMid = self.pointMid
                     self.dataRequestMove.pathInfo[0].movableZone = self.movableZone                   
-                              
+                    self.dataRequestMove.pathInfo[0].fieldSafety = self.fieldSafety
+
                     self.pub_requestMove.publish(self.dataRequestMove)
 
                     self.DieTime_pub = time.time()

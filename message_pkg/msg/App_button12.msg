@@ -52,6 +52,8 @@ bool bt_light_red
 bool bt_light_green
 bool bt_light_blue
 
+bool bt_remote
+
 #bool bt_toyoWrite_1
 #bool bt_toyoWrite_2
 #bool bt_toyoWrite_3

@@ -1,0 +1,2 @@
+int8 zone_sick_ahead
+int8 zone_sick_behind

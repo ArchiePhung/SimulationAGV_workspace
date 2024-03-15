@@ -1,0 +1,43 @@
+Pub: StiClient
+Sub: MakePathbyPoint
+Topic: move_request
+Msg define: 
+
+ x	int32 enable                  : cho phép tạo điểm di chuyển trên lộ trình
+	int32 target_id               : id điểm target
+ x	float64 target_x              : tọa độ x điểm target
+ x	float64 target_y			  : tọa độ y điểm target
+ x	float64 target_z              : tọa độ z điểm target
+ x	float64 offset                : khoảng offset
+xx	sti_msgs/PathInfo[] pathInfo  : Thông tin của lộ trình
+xx			int16 pathID                      : Id của lộ trình
+xx			int16 typePath                    : Loại đường lộ trình - 1: Đường thẳng - 2: đường tròn - 3: đường Bezier - 4: Đường cong khác(không dùng)
+xx			int8 direction                    : hướng di chuyển - 1: bằng đầu - 0 : bằng đuôi
+xx			geometry_msgs/Pose pointOne       : Thông số điểm đầu
+					geometry_msgs/Point position
+						float64 x
+						float64 y
+						float64 z
+					geometry_msgs/Quaternion orientation
+						float64 x
+						float64 y
+						float64 z
+						float64 w
+xx			geometry_msgs/Pose pointSecond    : Thông số điểm cuối
+xx			float64 velocity                  : Vận tốc của AGV khi đi qua các điểm: (0 -> 0.8)
+ x			float64 radius                    : Bán kính của lộ trình đường tròn
+			geometry_msgs/Pose pointCenter    : Tọa độ điểm trung tâm ?????????/
+			int64 numberPts                   : Số điểm chia nhỏ trên lộ trình của đường Bezier 
+xx			geometry_msgs/Pose pointMid       : Tọa độ điểm giữa
+			float64  movableZone              : Vùng an toàn của AGV
+
+	int32 enableStop              : cho phép AGV dừng ???
+	sti_msgs/StopPoint pointStopAvoid : Điểm dừng tránh
+			int16 pathID
+			int16 path2ID
+			geometry_msgs/Pose point
+ x	int32 mission                 : Nhiệm vụ ????
+ x	string mess                   : 
+
+
+x: là có dùng

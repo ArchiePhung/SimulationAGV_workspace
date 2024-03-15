@@ -628,7 +628,7 @@ class MakePathByPoint():
                             # print(point)
                             self.msgPath.poses.append(point)
 
-                            pointRQ = PointRequestMove()
+                            pointRQ = PointRequestMove()                # chính là kiểu của infoPoint
                             pointRQ.pathID = pathID
                             pointRQ.typePath = typePath
                             pointRQ.direction = self.dataRequestMove.pathInfo[i].direction

@@ -1,0 +1,13 @@
+>> angle_min : -3.1415927
+>> angle_max : 3.1415927
+>> angle_increment: 0.005482709966599941  ~ 0,314136143 độ
+>> time_increment: 0.00011664444173220545 s
+>> scan_time: 0.14656074345111847 s
+>> range_min: 0.15
+>> range_max: 12
+
+>> ranges length: 1147 = scan_time/time_increment 
+>> intensities length: 1147 = scan_time/time_increment  
+
+
+

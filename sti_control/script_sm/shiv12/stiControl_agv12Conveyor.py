@@ -95,6 +95,14 @@ class ros_control():
 		self.pub_requestMain = rospy.Publisher("/POWER_request", POWER_request, queue_size= 20)	
 		self.power_request = POWER_request()
 
+		# -- BATTERY INFO 
+		rospy.Subscriber("/Battery_info", Battery_info, self.callback_Battery)
+		self.battery_info = Battery_info()
+		self.timeStampe_battery = rospy.Time.now()
+
+		self.pub_pin = rospy.Publisher("/Pin_info", Pin_info, queue_size= 20)	
+		self.pin_info = Pin_info()			
+
 		# -- Board HC 82
 		rospy.Subscriber("/HC_info", HC_info, self.callback_HC, queue_size= 30) # lay thong tin trang thai cua node va cam bien sick an toan.
 		self.HC_info = HC_info()
@@ -433,7 +441,9 @@ class ros_control():
 		self.flag_CY21_transmitError_Blank = 0
 		self.flag_CY21_receiveError_Full = 0
 		self.flag_CY22_transmitError_Blank = 0
-		self.flag_CY22_receiveError_Full = 0		
+		self.flag_CY22_receiveError_Full = 0
+
+		self.flag_transmitError_Blank = 0		
 
 		# - Mission case
 		self.CASE_MISSION_SIMPLE = 0
@@ -444,8 +454,9 @@ class ros_control():
 		self.case_step1 = 1
 		self.case_step2 = 1	
 		self.mission_val = 0
-		
 
+		self.flag_runAgain = 0
+		
 	# ------------------------ Call Back ------------------------ #
 	def callback_autoNow(self, data):
 		self.flag_Auto = data.data
@@ -466,6 +477,17 @@ class ros_control():
 		self.main_info = data
 		self.voltage = round(self.main_info.voltages, 2)
 		self.timeStampe_main = rospy.Time.now()
+
+	def callback_Battery(self, data):
+		self.battery_info = data
+		self.timeStampe_battery = rospy.Time.now()
+		# self.pin_info.pinState = self.battery_info.pinState
+		# self.pin_info.pinVolt = self.battery_info.pinVolt
+		# self.pin_info.pinCurr = self.battery_info.pinCurr
+		# self.pin_info.pinPercent = self.battery_info.pinPercent
+		# self.pin_info.timeCharge = self.convert_intTotime(self.battery_info.timeCharge)
+		# self.pin_info.timeChargePropose = self.convert_intTotime(self.battery_info.timeChargePropose)
+		# self.pub_pin.publish(self.pin_info)
 
 	def callback_HC(self, data):
 		# print ("HC read")
@@ -861,6 +883,23 @@ class ros_control():
 				return 0		
 		return 0
 
+	# -- 
+	def convert_intTotime(self, time):
+		str_time = ""
+		time_hour = int(time/3600)
+		time = time - time_hour*3600
+		time_minute = int(time/60)
+		time_second = time - time_minute*60
+
+		if time_hour == 0:
+			if time_minute == 0:
+				str_time = str(time_second) + "s"
+			else:
+				str_time = str(time_minute) + "m" + str(time_second) + "s"
+		else:
+			str_time = str(time_hour) + "h" + str(time_minute) + "m" + str(time_second) + "s"
+			
+		return str_time
 	# ------------------------ Detect Lost ------------------------ #
 	def detectLost_navigation(self):
 		delta_t = rospy.Time.now() - self.timeStampe_navigationRespond
@@ -900,6 +939,12 @@ class ros_control():
 
 	def detectLost_Main(self):
 		delta_t = rospy.Time.now() - self.timeStampe_main
+		if delta_t.to_sec() > 4.0:
+			return 1
+		return 0
+
+	def detectLost_Battery(self):
+		delta_t = rospy.Time.now() - self.timeStampe_battery
 		if delta_t.to_sec() > 4.0:
 			return 1
 		return 0
@@ -1020,6 +1065,10 @@ class ros_control():
 		# 	# -- Lost OC Board No.34
 		# 	if self.detectLost_OC34() == 1:
 		# 		listError_now.append(345)
+
+		# -- Battery info
+		# if self.detectLost_Battery() == 1:
+		# 	listError_now.append(283)
 
 		# -- Goal Control
 		if self.detectLost_navigation() == 1:
@@ -1156,7 +1205,11 @@ class ros_control():
 		if self.flag_CY21_transmitError_Blank == 1:
 			listError_now.append(517)
 		if self.flag_CY22_transmitError_Blank == 1:
-			listError_now.append(518)				
+			listError_now.append(518)	
+
+		# - Cảnh báo AGV trả tự động nhưng không có hàng
+		if self.flag_transmitError_Blank == 1:
+			listError_now.append(519)			
 
 		return listError_now
 
@@ -1204,10 +1257,18 @@ class ros_control():
 		self.flagWarning_receivedRack22 = 0
 
 		# -
+		self.flag_transmitError_Blank = 0
+
+		# -
 		self.listMission_completed = [0, 0, 0, 0, 0, 0]
 		# -- add 17/03/2023
 		self.control_CPD = CPD_write()
 		self.control_conveyors = Control_conveyors()
+		self.AGVToyo_signal = Signal_AGVToyo()
+
+		# - 
+		self.case_step1 = 1
+		self.case_step2 = 1
 
 	def run_maunal(self):
 		cmd_vel = Twist()
@@ -1411,7 +1472,7 @@ class ros_control():
 		if no_cy == 0:
 			self.troubleshoot_mess("info", "Ko kết nối băng tải - Gửi lệnh các băng tải dừng hết", 0)
 		else:
-			self.troubleshoot_mess("info", "Ko kết nối băng tải - Đang gửi lệnh cho băng tải", 0)
+			self.troubleshoot_mess("info", "Ko kết nối băng tải - Đang gửi lệnh cho băng tải", str(no_cy))
 
 		self.control_conveyors.No1_mission = bit1
 		self.control_conveyors.No2_mission = bit2
@@ -1555,6 +1616,11 @@ class ros_control():
 				self.flag_CY21_receiveError_Full = 0
 				self.flag_CY22_transmitError_Blank = 0
 				self.flag_CY22_receiveError_Full = 0
+
+				# - 
+				if self.signal_conveyor11.sensor_checkItem == 1 or self.signal_conveyor12.sensor_checkItem == 1 or self.signal_conveyor21.sensor_checkItem == 1 or self.signal_conveyor22.sensor_checkItem == 1:
+					self.flag_transmitError_Blank = 0
+					self.flag_runAgain = 1
 
 			else:
 				self.task_driver.data = self.taskDriver_Read
@@ -2082,8 +2148,15 @@ class ros_control():
 					self.job_doing = 1
 					self.flag_Byhand_to_Auto = 0
 					self.disable_brake.data = 0
-					self.process = 2
+					self.process = 2		
 				else:
+					self.process = 43		
+
+				# --
+				if self.flag_runAgain == 1:
+					self.flag_runAgain = 0
+					self.resetAll_variable()
+					print ("---- Reset - Run process again ----")
 					self.process = 43
 
 			elif self.process == 43: # - Thực hiện nhiệm vụ trước.
@@ -2252,6 +2325,8 @@ class ros_control():
 						self.flagWarning_transfer21 = 0
 						self.flagWarning_transfer22 = 0
 						self.flagWarning_transfer23 = 0
+
+						self.flag_transmitError_Blank = 0
 
 					elif self.mission_before == 66 and self.mission_after == 10: # - Nhiệm vụ sạc.
 						self.completed_after_mission = 1
@@ -2528,6 +2603,7 @@ class ros_control():
 
 						elif self.mission_before == 1:  # - Nhiệm vụ trả hàng 
 							if self.mission_after == 2:  # - AGV Trả hàng tại truyền IE5
+								# print("Case step 2 la: %s", self.case_step2)
 								if self.case_step2 == 1:
 									self.AGVToyo_signal.bit5_cnt = 1
 									if self.signal_CYMToyo.bit5_cnt == 1:                   # Conveyor xác nhận vị trí với AGV
@@ -2598,8 +2674,8 @@ class ros_control():
 											self.AGVToyo_signal.bit4 = 1
 										# -- empty
 										elif self.mission_val == 0:                            ###### thêm cảnh báo lỗi 
-											self.case_step2 = 10
 											self.troubleshoot_mess("info", "AutoMode -> AGV Bỏ qua trả hàng tại truyền IE5", 0)
+											self.flag_transmitError_Blank = 1
 
 										# - Wait CYM1 confirm 
 										if self.signal_CYMToyo.bit7_rdy == 1:
@@ -2850,6 +2926,7 @@ class ros_control():
 			self.Traffic_infoRespond.listError = self.listError
 			self.Traffic_infoRespond.process = self.job_doing
 			self.Traffic_infoRespond.task_num = self.mission_val
+			# self.Traffic_infoRespond.task_num = self.case_step2
 			# self.Traffic_infoRespond.case_mission1 = self.case_mission1
 			# self.Traffic_infoRespond.case_mission2 = self.case_mission2
 
@@ -2934,6 +3011,15 @@ class ros_control():
 
 				# self.speaker_effect = self.SPK_MOVE
 				self.pub_Main(self.charger_write, self.speaker_effect, self.EMC_write, self.EMC_reset)  # MISSION
+
+				# -- Battery info
+				self.pin_info.pinState = self.battery_info.pinState
+				self.pin_info.pinVolt = self.battery_info.pinVolt
+				self.pin_info.pinCurr = self.battery_info.pinCurr
+				self.pin_info.pinPercent = self.battery_info.pinPercent
+				self.pin_info.timeCharge = self.convert_intTotime(self.battery_info.timeCharge)
+				self.pin_info.timeChargePropose = self.convert_intTotime(self.battery_info.timeChargePropose)
+				self.pub_pin.publish(self.pin_info)
 
 				# -------- Request Board HC -------- #
 				self.HC_request.RBG1 = self.led_effect 

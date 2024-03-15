@@ -139,8 +139,8 @@ class statusColor:
 		# --
 		self.lbc_button_clearError = 0
 		self.lbc_button_power = 0
-		self.lbc_blsock = 0
-		self.lbc_emg = 0
+		self.lbc_blsock11 = 0
+		self.lbc_emg11 = 0
 
 		# self.lbc_cyA_ssAhead = 0
 		# self.lbc_cyA_ssBehind = 0
@@ -257,6 +257,9 @@ class valueLable:
 
 		# -- mission
 		self.lbv_mission = ''
+
+		# -- Main board Temperature
+		self.lbv_tempcpu = ''
 
 class WelcomeScreen(QDialog):
 	def __init__(self):
@@ -1070,16 +1073,16 @@ class WelcomeScreen(QDialog):
 			self.lbc_button_power.setStyleSheet("background-color: white;")
 
 		# -- Blsock
-		if (self.statusColor.lbc_blsock == 1):
-			self.lbc_blsock.setStyleSheet("background-color: blue;")
-		elif (self.statusColor.lbc_blsock == 0):
-			self.lbc_blsock.setStyleSheet("background-color: white;")
+		if (self.statusColor.lbc_blsock1 == 1):
+			self.lbc_blsock1.setStyleSheet("background-color: blue;")
+		elif (self.statusColor.lbc_blsock1 == 0):
+			self.lbc_blsock1.setStyleSheet("background-color: white;")
 
 		# -- EMG
-		if (self.statusColor.lbc_emg == 1):
-			self.lbc_emg.setStyleSheet("background-color: blue;")
-		elif (self.statusColor.lbc_emg == 0):
-			self.lbc_emg.setStyleSheet("background-color: white;")	
+		if (self.statusColor.lbc_emg1 == 1):
+			self.lbc_emg1.setStyleSheet("background-color: blue;")
+		elif (self.statusColor.lbc_emg1 == 0):
+			self.lbc_emg1.setStyleSheet("background-color: white;")	
 
 		# -- Port: RTC Board
 		if (self.statusColor.lbc_port_rtc == 1):
@@ -1311,6 +1314,9 @@ class WelcomeScreen(QDialog):
 
 		# - 
 		self.lbv_mission.setText(self.valueLable.lbv_mission)
+
+		# -
+		self.lbv_tempcpu.setText(self.valueLable.lbv_tempcpu)
 		# self..setText(self.valueLable.)
 		
 	def controlShow_followMode(self):
@@ -1851,6 +1857,9 @@ class Program(threading.Thread):
 			517:'Băng tải 21 không có thùng nên không trả',
 			518:'Băng tải 22 không có thùng nên không trả',
 
+			# -
+			519:'AGV không có tray linh kiện trả hàng',
+
 			# - add 22/12/2023
 			391:'Không phát hiện vị trí băng tải nhận 11', # 
 			392:'Không phát hiện vị trí băng tải nhận 12', #
@@ -1918,8 +1927,8 @@ class Program(threading.Thread):
 		# --
 		self.statusColor.lbc_button_clearError = self.main_info.stsButton_reset
 		self.statusColor.lbc_button_power = self.main_info.stsButton_power
-		self.statusColor.lbc_emg = self.main_info.EMC_status
-		self.statusColor.lbc_blsock = self.HC_info.vacham
+		self.statusColor.lbc_emg1 = self.main_info.EMC_status
+		self.statusColor.lbc_blsock1 = self.HC_info.vacham
 		# --
 		if (self.welcomeScreen.statusButton.numberConveyor == 1):
 			self.statusColor.lbc_CYssAheadSignal  = self.signal_conveyor11.sensor_limitAhead
@@ -1975,16 +1984,26 @@ class Program(threading.Thread):
 				self.statusColor.lbc_mission_cy12 = 0
 				self.statusColor.lbc_mission_cy21 = 0
 				self.statusColor.lbc_mission_cy22 = 0
+
 			elif self.server_cmdRequest.before_mission == 0: # - Nhan hang.
 				self.statusColor.lbc_mission_cy11 = self.getBit_fromInt16(self.NN_infoRespond.task_num, 0)
 				self.statusColor.lbc_mission_cy12 = self.getBit_fromInt16(self.NN_infoRespond.task_num, 1)
 				self.statusColor.lbc_mission_cy21 = self.getBit_fromInt16(self.NN_infoRespond.task_num, 2)
 				self.statusColor.lbc_mission_cy22 = self.getBit_fromInt16(self.NN_infoRespond.task_num, 3)
-			elif self.server_cmdRequest.before_mission == 1: # - Nhan hang.
-				self.statusColor.lbc_mission_cy11 = self.getBit_fromInt16(self.NN_infoRespond.task_num, 0) + 1
-				self.statusColor.lbc_mission_cy12 = self.getBit_fromInt16(self.NN_infoRespond.task_num, 1) + 1
-				self.statusColor.lbc_mission_cy21 = self.getBit_fromInt16(self.NN_infoRespond.task_num, 2) + 1
-				self.statusColor.lbc_mission_cy22 = self.getBit_fromInt16(self.NN_infoRespond.task_num, 3) + 1
+
+			elif self.server_cmdRequest.before_mission == 1: # - Tra hang.
+				self.statusColor.lbc_mission_cy11 = self.getBit_fromInt16(self.NN_infoRespond.task_num, 0)
+				if self.statusColor.lbc_mission_cy11 == 1:
+					self.statusColor.lbc_mission_cy11 = 2
+				self.statusColor.lbc_mission_cy12 = self.getBit_fromInt16(self.NN_infoRespond.task_num, 1)
+				if self.statusColor.lbc_mission_cy12 == 1:
+					self.statusColor.lbc_mission_cy12 = 2
+				self.statusColor.lbc_mission_cy21 = self.getBit_fromInt16(self.NN_infoRespond.task_num, 2)
+				if self.statusColor.lbc_mission_cy21 == 1:
+					self.statusColor.lbc_mission_cy21 = 2
+				self.statusColor.lbc_mission_cy22 = self.getBit_fromInt16(self.NN_infoRespond.task_num, 3)
+				if self.statusColor.lbc_mission_cy22 == 1:
+					self.statusColor.lbc_mission_cy22 = 2
 		
 		# --
 		self.statusColor.lbc_toyoReadBit1 = self.signal_CYMToyo.bit1
@@ -2034,11 +2053,14 @@ class Program(threading.Thread):
 		#self.valueLable.lbv_battery = "  " + str(bat)
 		self.valueLable.lbv_battery = "  " + str(self.NN_infoRespond.battery/10.)
 
+		# -- Board Temp 
+		# self.valueLable.lbv_tempcpu = "  " + str(self.main_info.temp)
+
 		self.valueLable.lbv_pinStatus = self.convert_pinStatus(self.pin_info.pinState)
 		self.valueLable.lbv_pinVolt = str(self.pin_info.pinVolt) + " V"
 		self.valueLable.lbv_pinCurr = str(self.pin_info.pinCurr) + " A"
 		self.valueLable.lbv_pinPercent = str(self.pin_info.pinPercent) + " %"
-		self.valueLable.lbv_pinPercent = self.pin_info.timeCharge
+		self.valueLable.lbv_pinTimeCharge = self.pin_info.timeCharge
 		self.valueLable.lbv_pinTimeChargePropose = self.pin_info.timeChargePropose
 
 		# -- status AGV

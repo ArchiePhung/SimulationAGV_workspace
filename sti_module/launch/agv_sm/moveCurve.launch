@@ -1,0 +1,5 @@
+<launch>
+  <node name="MovetoCurvePath" pkg="sti_module" type="test_movetoCurvePath.py" output="screen">
+    <rosparam command="load" file="$(find sti_module)/config/param_lagv.yaml" />
+  </node>
+</launch> 

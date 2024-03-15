@@ -101,6 +101,9 @@ add_message_files(
 
 	# Pin details
 	Pin_info.msg
+	Battery_info.msg
+
+	Safety_sick.msg
 )	
 
 include_directories(

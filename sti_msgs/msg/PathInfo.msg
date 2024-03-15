@@ -9,3 +9,4 @@ geometry_msgs/Pose pointCenter
 int64 numberPts
 geometry_msgs/Pose pointMid
 float64  movableZone
+int8 fieldSafety

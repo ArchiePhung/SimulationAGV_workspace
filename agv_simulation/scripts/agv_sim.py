@@ -33,13 +33,13 @@ class AGV_SIM():
         self.msg_cmdVel = Twist()
         # self.is_receive_cmdVel = 0
 
-        rospy.Subscriber('/request_move', Move_request, self.handle_requestMove, queue_size = 20)
-        self.msg_requestMove = Move_request()
-        self.is_receive_requestMove = 0
+        # rospy.Subscriber('/request_move', Move_request, self.handle_requestMove, queue_size = 20)
+        # self.msg_requestMove = Move_request()
+        # self.is_receive_requestMove = 0
 
         # -- ros publish 
-        self.pub_agv_pose = rospy.Publisher('/agv_pose', Pose, queue_size = 20)
-        self.data_agv_pose = Pose()
+        self.pub_agv_pose = rospy.Publisher('/robotPose_nav', PoseStamped, queue_size = 20)
+        self.data_agv_pose = PoseStamped()
 
         # -- Mô tả vị trí ban đầu của AGV hiển thị trên tf rviz   -- 
         self.x_start = rospy.get_param('x_start')
@@ -70,8 +70,8 @@ class AGV_SIM():
         self.is_allowRun = 1  
         self.is_receive_vel = 0   
 
-    def handle_requestMove(self, data):
-        self.msg_requestMove = data 
+    # def handle_requestMove(self, data):
+    #     self.msg_requestMove = data 
         # self.is_receive_rqMove = 1
 
     def handle_cmdVel(self, data):
@@ -87,20 +87,20 @@ class AGV_SIM():
                 self.time_now = time.time() - self.pre_t
 
                 self.agv_angle = self.agv_pre_angle + self.msg_cmdVel.angular.z * self.time_now
-                self.data_agv_pose.position.x = self.agv_pre_pose_x + self.msg_cmdVel.linear.x * math.cos(self.agv_angle ) * self.time_now 
-                self.data_agv_pose.position.y = self.agv_pre_pose_y + self.msg_cmdVel.linear.x * math.sin(self.agv_angle ) * self.time_now 
+                self.data_agv_pose.pose.position.x = self.agv_pre_pose_x + self.msg_cmdVel.linear.x * math.cos(self.agv_angle ) * self.time_now 
+                self.data_agv_pose.pose.position.y = self.agv_pre_pose_y + self.msg_cmdVel.linear.x * math.sin(self.agv_angle ) * self.time_now 
 
-                self.translation = (self.data_agv_pose.position.x, self.data_agv_pose.position.y, 0)
+                self.translation = (self.data_agv_pose.pose.position.x, self.data_agv_pose.pose.position.y, 0)
                 self.quanternion = quaternion_from_euler(0, 0, self.agv_angle)
                 
-                self.data_agv_pose.orientation.x = self.quanternion[0]
-                self.data_agv_pose.orientation.y = self.quanternion[1]
-                self.data_agv_pose.orientation.z = self.quanternion[2]
-                self.data_agv_pose.orientation.w = self.quanternion[3]
+                self.data_agv_pose.pose.orientation.x = self.quanternion[0]
+                self.data_agv_pose.pose.orientation.y = self.quanternion[1]
+                self.data_agv_pose.pose.orientation.z = self.quanternion[2]
+                self.data_agv_pose.pose.orientation.w = self.quanternion[3]
 
                 self.agv_pre_angle = self.agv_angle
-                self.agv_pre_pose_x = self.data_agv_pose.position.x
-                self.agv_pre_pose_y = self.data_agv_pose.position.y
+                self.agv_pre_pose_x = self.data_agv_pose.pose.position.x
+                self.agv_pre_pose_y = self.data_agv_pose.pose.position.y
                 self.pre_t = time.time()
 
             else:

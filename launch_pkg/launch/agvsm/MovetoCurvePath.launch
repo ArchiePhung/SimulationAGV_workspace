@@ -17,14 +17,32 @@
   <node name="stiClient_fake" pkg="sti_control" type="FstiClient_movetoCurvePath.py" /> 
 
   <!-- Điều hướng AGV  -->
-  <node name="MakePathbyPoint" pkg="sti_module" type="MakePathbyPoint.py" output="screen"/>
-
-  <node name="MovetoCurvePath" pkg="sti_module" type="test_movetoCurvePath.py" output="screen">
-    <rosparam command="load" file="$(find sti_module)/config/param_lagv.yaml" />
+  <!-- <node name="MakePathbyPoint" pkg="sti_module" type="MakePathbyPoint.py" output="screen"/> -->
+  <node pkg="sti_module"  name="makePathByPoint" type="makePathByPoint_agvtow.py" output="screen" > 
+        <!-- <param name="topic_subPose" type="str" value="robotPose_lidarLOC" /> -->
+        <param name="topic_subPose" type="str" value="agv_pose" />
+        <param name="topic_subReq" type="str" value="request_move" />
+        <param name="topic_pubListP" type="str" value="list_pointRequestMove" />
+        <param name="topic_pubPath" type="str" value="path_global" />
   </node>
+
+  <!-- Goal control for AGV towing -->
+  <!-- <node pkg="sti_module"  name="GoalControl" type="goalControlTowingV2.py"> 
+    <rosparam command="load" file="$(find sti_module)/config/param_lagv.yaml" />
+    <param name="topic_CmdVel" type="str" value="cmd_vel" /> -->
+    <!-- <param name="topic_pose" type="str" value="robotPose_lidarLOC" /> -->
+    <!-- <param name="topic_pose" type="str" value="agv_pose" />
+    <param name="topic_subListP" type="str" value="list_pointRequestMove" />
+    <param name="topic_pubRes" type="str" value="move_respond" />
+  </node> -->
+
+  <!-- Goal control of AGV forklift -->
+  <!-- <node name="MovetoCurvePath" pkg="sti_module" type="test_movetoCurvePath.py" output="screen">
+    <rosparam command="load" file="$(find sti_module)/config/param_lagv.yaml" />
+  </node> -->
   
   <!-- Vị trí của AGV trên Rviz -->
-  <node name="agv_sim" pkg="agv_simulation" type="agvpos_sim.py" respawn="false" >
+  <node name="agv_sim" pkg="agv_simulation" type="agv_sim.py" respawn="false" >
     <rosparam command="load" file="$(find agv_simulation)/config/param_lagv.yaml" />
   </node>
 

@@ -762,16 +762,19 @@ class robot_AGV(threading.Thread):
 				
 		return False         
 
-	def checkPathOutOfRange(self):                                # Archiep: Ý nghĩa đúng của hàm này là gì ??
+	def checkPathOutOfRange(self):                                # Archiep: AGV đang ở ngoài lộ trình so sánh với đoạn movableZone
 		self.warnAGV = 0
 		if self.isGoalNearest: # tim diem goal gan nhat
 			goalNearNow = InfoPathFollowing()
 			goalNearNow = self.infoGoalNearest
 			disNear = self.disRbToGoalNearest
 
-			if disNear > goalNearNow.movableZone:       # Archiep: ban đầu là " >= "
-				self.warnAGV = 3
-				return -1 # bao loi qua khoang cachs -> yeu cau di chuyen gan lai
+			print("Khoảng cách là: ", self.disRbToGoalNearest)
+			print("Vùng di chuyển đang là: ", goalNearNow.movableZone)
+
+			# if disNear >= goalNearNow.movableZone:                                    # Archiep comment
+			# 	self.warnAGV = 3
+			# 	return -1 # bao loi qua khoang cachs -> yeu cau di chuyen gan lai
 			
 			if goalNearNow.X == self.finishPoint.X and goalNearNow.Y == self.finishPoint.Y: # la diem cuoi
 				return 2

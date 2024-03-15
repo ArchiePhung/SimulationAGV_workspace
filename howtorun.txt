@@ -42,4 +42,24 @@ roslaunch launch_pkg run_CY34_case1.launch
 
 14. Test code AGV-TOWING-DEMO in SHIV12
 roslaunch launch_pkg run_TOW12_demo.launch
- 
+
+15. Test AGV communication with Narime Conveyor
+>> Run roscore
+>> Run keyboard command: rosrun sti_control keyboard_command.py
+>> Run Test Gui: rosrun app_ros600 appfakeSignal_AGVconv.py
+>> Run test program: rosrun sti_control test_narime.py
+
+>> Quy trình test băng tải nhà làm
+   0. Khởi động hệ thống: restart
+   1. Chọn nhiệm vụ: get_mission, 1 - Nhận hàng, 2 - Trả hàng
+   2. Xác nhận nhiệm vụ: pos
+   3. Chọn băng tải thao tác: cy11, cy12, cy21, cy22, floor1, floor2
+   4. Reset hệ thống: reset
+
+>> Quy trình test chế độ Auto (test với riêng từng băng tải và từng tầng)
+   0. Khởi động hệ thống: restart
+   1. Chọn nhiệm vụ: get_mission, 1 - Nhận hàng, 2 - Trả hàng
+   2. Xác nhận nhiệm vụ: pos
+   3. Xác nhận vị trí băng tải thao tác trên AGV: get_cy
+   4. Chạy tự động: run
+   5. Reset hệ thống: reset

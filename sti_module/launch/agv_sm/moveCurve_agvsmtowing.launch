@@ -1,0 +1,15 @@
+<launch>
+  <node pkg="sti_module"  name="GoalControl" type="goalControlTowingV2.py" output="screen"> 
+    <rosparam command="load" file="$(find sti_module)/config/param_lagv.yaml" />
+    <param name="topic_CmdVel" type="str" value="cmd_vel" />
+    <!-- <param name="topic_pose" type="str" value="robotPose_lidarLOC" /> -->
+    <param name="topic_pose" type="str" value="agv_pose" />
+    <param name="topic_subListP" type="str" value="list_pointRequestMove" />
+    <param name="topic_pubRes" type="str" value="move_respond" />
+  </node>
+
+  <!-- <node name="MovetoCurvePath" pkg="sti_module" type="test_movetoCurvePath.py" output="screen">
+    <rosparam command="load" file="$(find sti_module)/config/param_lagv.yaml" />
+  </node> -->
+
+</launch>

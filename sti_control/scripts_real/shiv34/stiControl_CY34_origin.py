@@ -2388,7 +2388,7 @@ class ros_control():
 									if self.status_conveyor21.status == 255:
 										self.control_CPD.output7 = 0
 									# -
-									if self.status_conveyor21.status == 3 and self.status_conveyor21.sensor_limitBehind == 0:
+									if self.status_conveyor21.status == 3 and self.status_conveyor21.sensor_limitBehind == 0:  # Lỗi đã nhận thùng hàng vào rồi nhưng cảm biến sau vẫn chưa bắt được
 										self.flagWarning_receivedRack21 = 1
 									# -
 									if self.status_conveyor21.status == 3 and self.status_conveyor21.sensor_limitBehind == 1:
